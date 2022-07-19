@@ -6,7 +6,7 @@ use ceresdb_client_rs::{client, model as rust_model, options, DbClient};
 use pyo3::{exceptions::PyException, prelude::*};
 use pyo3_asyncio::tokio;
 
-use crate::model;
+use crate::{model, model::WriteResponse};
 
 pub fn register_py_module(m: &PyModule) -> PyResult<()> {
     m.add_class::<RpcContext>()?;
@@ -63,11 +63,31 @@ impl Client {
         let raw_client = self.raw_client.clone();
         let raw_ctx = ctx.raw_ctx.clone();
         tokio::future_into_py(py, async move {
-            let queried_rows = raw_client
-                .query(&raw_ctx, &raw_req)
+            let query_resp = raw_client
+                .query(&*raw_ctx, &raw_req)
                 .await
                 .map_err(to_py_exception)?;
-            model::convert_queried_rows(queried_rows).map_err(to_py_exception)
+            model::convert_query_response(query_resp).map_err(to_py_exception)
+        })
+    }
+
+    fn write<'p>(
+        &self,
+        py: Python<'p>,
+        ctx: &RpcContext,
+        req: &model::WriteRequest,
+    ) -> PyResult<&'p PyAny> {
+        let raw_client = self.raw_client.clone();
+        let raw_ctx = ctx.raw_ctx.clone();
+        let raw_req: rust_model::write::WriteRequest = (*req).clone().into();
+        tokio::future_into_py(py, async move {
+            let write_result = raw_client
+                .write(&*raw_ctx, &raw_req)
+                .await
+                .map_err(to_py_exception)?;
+            Ok(WriteResponse {
+                write_result: Arc::new(write_result),
+            })
         })
     }
 }
