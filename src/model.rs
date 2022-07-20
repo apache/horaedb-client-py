@@ -1,8 +1,17 @@
 // Copyright 2022 CeresDB Project Authors. Licensed under Apache-2.0.
 
+//! Read/Write request and response, and useful tools for them.
+
 use std::sync::Arc;
 
-use ceresdb_client_rs::{model as rust_model, model::QueriedRows};
+use ceresdb_client_rs::{
+    is_reserved_column_name, model as rust_model,
+    model::{
+        value::{TimestampMs, Value as RustValue},
+        write::{WriteRequestBuilder, WriteResult},
+        QueryResponse as RustQueryResponse,
+    },
+};
 use common_types::datum::Datum;
 use pyo3::{exceptions::PyTypeError, prelude::*};
 
@@ -13,6 +22,12 @@ pub fn register_py_module(m: &PyModule) -> PyResult<()> {
     m.add_class::<ColumnDataType>()?;
     m.add_class::<Schema>()?;
     m.add_class::<Row>()?;
+    m.add_class::<Value>()?;
+    m.add_class::<ValueBuilder>()?;
+    m.add_class::<PointBuilder>()?;
+    m.add_class::<Point>()?;
+    m.add_class::<WriteRequest>()?;
+    m.add_class::<WriteResponse>()?;
 
     Ok(())
 }
@@ -174,12 +189,13 @@ impl Schema {
 pub struct QueryResponse {
     schema: Schema,
     raw_rows: Arc<Vec<rust_model::Row>>,
+    affected_rows: u32,
 }
 
 #[pymethods]
 impl QueryResponse {
     #[new]
-    pub fn new(schema: Schema, rows: Vec<PyRef<Row>>) -> Self {
+    pub fn new(schema: Schema, rows: Vec<PyRef<Row>>, affected_rows: u32) -> Self {
         let mut raw_rows = Vec::with_capacity(rows.len());
         for row in rows {
             raw_rows.push(row.raw_rows[row.idx].clone());
@@ -187,6 +203,7 @@ impl QueryResponse {
         Self {
             schema,
             raw_rows: Arc::new(raw_rows),
+            affected_rows,
         }
     }
 
@@ -209,16 +226,248 @@ impl QueryResponse {
         }
     }
 
+    pub fn get_affected_rows(&self) -> u32 {
+        self.affected_rows
+    }
+
     pub fn __str__(&self) -> String {
         format!("{:?}", self)
     }
 }
 
-pub fn convert_queried_rows(queried_rows: QueriedRows) -> PyResult<QueryResponse> {
+pub fn convert_query_response(query_resp: RustQueryResponse) -> PyResult<QueryResponse> {
     Ok(QueryResponse {
         schema: Schema {
-            raw_schema: Arc::new(queried_rows.schema),
+            raw_schema: Arc::new(query_resp.schema),
         },
-        raw_rows: Arc::new(queried_rows.rows),
+        raw_rows: Arc::new(query_resp.rows),
+        affected_rows: query_resp.affected_rows,
     })
+}
+
+/// Value in local, define to avoid using the one in ceresdb.
+#[pyclass]
+#[derive(Clone, Debug)]
+pub struct Value {
+    raw_val: rust_model::value::Value,
+}
+
+#[pyclass]
+#[derive(Clone, Debug, Default)]
+pub struct ValueBuilder;
+
+#[pymethods]
+impl ValueBuilder {
+    #[new]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_i8(&self, val: i8) -> Value {
+        Value {
+            raw_val: RustValue::Int8(val),
+        }
+    }
+
+    pub fn with_u8(&self, val: u8) -> Value {
+        Value {
+            raw_val: RustValue::UInt8(val),
+        }
+    }
+
+    pub fn with_i16(&self, val: i16) -> Value {
+        Value {
+            raw_val: RustValue::Int16(val),
+        }
+    }
+
+    pub fn with_u16(&self, val: u16) -> Value {
+        Value {
+            raw_val: RustValue::UInt16(val),
+        }
+    }
+
+    pub fn with_i32(&self, val: i32) -> Value {
+        Value {
+            raw_val: RustValue::Int32(val),
+        }
+    }
+
+    pub fn with_u32(&self, val: u32) -> Value {
+        Value {
+            raw_val: RustValue::UInt32(val),
+        }
+    }
+
+    pub fn with_i64(&self, val: i64) -> Value {
+        Value {
+            raw_val: RustValue::Int64(val),
+        }
+    }
+
+    pub fn with_u64(&self, val: u64) -> Value {
+        Value {
+            raw_val: RustValue::UInt64(val),
+        }
+    }
+
+    pub fn with_float(&self, val: f32) -> Value {
+        Value {
+            raw_val: RustValue::Float(val),
+        }
+    }
+
+    pub fn with_double(&self, val: f64) -> Value {
+        Value {
+            raw_val: RustValue::Double(val),
+        }
+    }
+
+    pub fn with_bool(&self, val: bool) -> Value {
+        Value {
+            raw_val: RustValue::Boolean(val),
+        }
+    }
+
+    pub fn with_str(&self, val: String) -> Value {
+        Value {
+            raw_val: RustValue::String(val),
+        }
+    }
+
+    pub fn with_varbinary(&self, val: Vec<u8>) -> Value {
+        Value {
+            raw_val: RustValue::Varbinary(val),
+        }
+    }
+}
+
+/// Point represents one data row needed to write.
+#[pyclass]
+#[derive(Clone, Debug)]
+pub struct Point {
+    metric: String,
+    timestamp: TimestampMs,
+    tags: Vec<(String, Value)>,
+    fields: Vec<(String, Value)>,
+}
+
+#[pyclass]
+#[derive(Clone, Default)]
+pub struct PointBuilder {
+    metric: Option<String>,
+    timestamp: Option<TimestampMs>,
+    tags: Vec<(String, Value)>,
+    fields: Vec<(String, Value)>,
+    contains_reserved_column_name: bool,
+}
+
+#[pymethods]
+impl PointBuilder {
+    #[new]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn metric(&mut self, metric: String) {
+        self.metric = Some(metric);
+    }
+
+    pub fn timestamp(&mut self, timestamp: TimestampMs) {
+        self.timestamp = Some(timestamp);
+    }
+
+    pub fn tag(&mut self, name: String, val: Value) {
+        if is_reserved_column_name(&name) {
+            self.contains_reserved_column_name = true;
+        }
+        self.tags.push((name, val));
+    }
+
+    pub fn field(&mut self, name: String, val: Value) {
+        if is_reserved_column_name(&name) {
+            self.contains_reserved_column_name = true;
+        }
+        self.fields.push((name, val));
+    }
+
+    pub fn build(&mut self) -> PyResult<Point> {
+        if self.contains_reserved_column_name {
+            return Err(PyTypeError::new_err(
+                "Tag or field name contains reserved column name in ceresdb".to_string(),
+            ));
+        }
+
+        if self.fields.is_empty() {
+            return Err(PyTypeError::new_err(
+                "Fields should not be empty".to_string(),
+            ));
+        }
+
+        Ok(Point {
+            metric: std::mem::take(&mut self.metric)
+                .ok_or_else(|| PyTypeError::new_err("Metric must be set".to_string()))?,
+            timestamp: self
+                .timestamp
+                .ok_or_else(|| PyTypeError::new_err("Timestamp must be set".to_string()))?,
+            tags: std::mem::take(&mut self.tags),
+            fields: std::mem::take(&mut self.fields),
+        })
+    }
+}
+
+/// A wrapper for `WriteRequestBuilder`.
+#[pyclass]
+#[derive(Clone, Default)]
+pub struct WriteRequest {
+    builder: WriteRequestBuilder,
+}
+
+#[pymethods]
+impl WriteRequest {
+    #[new]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn add_point(&mut self, point: Point) -> PyResult<()> {
+        let mut row_builder = self.builder.row_builder();
+
+        row_builder = row_builder.metric(point.metric).timestamp(point.timestamp);
+        for (name, val) in point.tags {
+            row_builder = row_builder.tag(name, val.raw_val);
+        }
+
+        for (name, val) in point.fields {
+            row_builder = row_builder.field(name, val.raw_val);
+        }
+
+        row_builder.finish().map_err(PyTypeError::new_err)
+    }
+}
+
+impl From<WriteRequest> for rust_model::write::WriteRequest {
+    fn from(write_req: WriteRequest) -> Self {
+        write_req.builder.build()
+    }
+}
+
+#[pyclass]
+pub struct WriteResponse {
+    pub write_result: Arc<WriteResult>,
+}
+
+#[pymethods]
+impl WriteResponse {
+    pub fn get_success(&self) -> u32 {
+        self.write_result.success
+    }
+
+    pub fn get_failed(&self) -> u32 {
+        self.write_result.failed
+    }
+
+    pub fn get_metrics(&self) -> Vec<String> {
+        self.write_result.metrics.clone()
+    }
 }
