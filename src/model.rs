@@ -189,6 +189,7 @@ impl Schema {
 pub struct QueryResponse {
     schema: Schema,
     raw_rows: Arc<Vec<rust_model::Row>>,
+    #[pyo3(get)]
     affected_rows: u32,
 }
 
@@ -224,10 +225,6 @@ impl QueryResponse {
         } else {
             None
         }
-    }
-
-    pub fn get_affected_rows(&self) -> u32 {
-        self.affected_rows
     }
 
     pub fn __str__(&self) -> String {
