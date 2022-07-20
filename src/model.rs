@@ -9,10 +9,9 @@ use ceresdb_client_rs::{
     model::{
         value::{TimestampMs, Value as RustValue},
         write::{WriteRequestBuilder, WriteResult},
-        QueryResponse as RustQueryResponse,
+        Datum, QueryResponse as RustQueryResponse,
     },
 };
-use common_types::datum::Datum;
 use pyo3::{exceptions::PyTypeError, prelude::*};
 
 pub fn register_py_module(m: &PyModule) -> PyResult<()> {
