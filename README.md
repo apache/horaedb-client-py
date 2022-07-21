@@ -6,14 +6,15 @@
 [![Slack](https://badgen.net/badge/Slack/Join%20CeresDB/0abd59?icon=slack)](https://join.slack.com/t/ceresdbcommunity/shared_invite/zt-1au1ihbdy-5huC9J9s2462yBMIWmerTw)
 
 ## Introduction
-The python client for CeresDB.
-CeresDB is a high-performance, distributed, schema-less, cloud native time-series database that can handle both time-series and analytics workloads.
+The python client for [CeresDB](https://github.com/CeresDB/ceresdb).
+
+[CeresDB](https://github.com/CeresDB/ceresdb) is a high-performance, distributed, schema-less, cloud native time-series database that can handle both time-series and analytics workloads.
 
 ## Support features
 - [x] Query
 - [x] Write
 
-An [example](examples/read_write.py) is provided to show how to access ceresdb.
+An [example](examples/read_write.py) is provided to show how to access CeresDB.
 
 ## Contributing
 Any contribution is welcome!
