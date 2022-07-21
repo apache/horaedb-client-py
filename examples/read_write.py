@@ -1,36 +1,28 @@
 # Copyright 2022 CeresDB Project Authors. Licensed under Apache-2.0.
 
 import datetime
-import requests
-
-from ceresdb_client_py import Builder, RpcContext, PointBuilder, ValueBuilder, WriteRequest, QueryRequest
+from ceresdb_client import Builder, RpcContext, PointBuilder, ValueBuilder, WriteRequest, QueryRequest
 import asyncio
 
 
-def create_table():
-    headers = {
-        'content-type': 'application/json',
-    }
-    url = 'http://127.0.0.1:5440/sql'
-    data = '{"query": "CREATE TABLE demo ( \
+def create_table(ctx):
+    create_table_sql = 'CREATE TABLE demo ( \
         name string TAG, \
         value double, \
         t timestamp NOT NULL, \
-        TIMESTAMP KEY(t)) ENGINE=Analytic with (enable_ttl=false)"}'
+        TIMESTAMP KEY(t)) ENGINE=Analytic with (enable_ttl=false)'
 
-    response = requests.post(url, headers=headers, data=data)
-    print("code:{}, content:{}".format(response.status_code, response.text))
+    req = QueryRequest('demo', create_table_sql)
+    _resp = sync_query(client, ctx, req)
+    print("Create table success!")
 
 
-def drop_table():
-    headers = {
-        'content-type': 'application/json',
-    }
-    url = 'http://127.0.0.1:5440/sql'
-    data = '{"query": "DROP TABLE demo"}'
+def drop_table(ctx):
+    create_table_sql = 'DROP TABLE demo'
 
-    response = requests.post(url, headers=headers, data=data)
-    print("code:{}, content:{}".format(response.status_code, response.text))
+    req = QueryRequest('demo', create_table_sql)
+    _resp = sync_query(client, ctx, req)
+    print("Drop table success!")
 
 
 async def async_query(cli, ctx, req):
@@ -76,12 +68,12 @@ if __name__ == "__main__":
 
     print("------------------------------------------------------------------")
     print("### create table:")
-    create_table()
+    create_table(ctx)
     print("------------------------------------------------------------------")
 
     print("### write:")
     point_builder = PointBuilder()
-    point_builder.metric("demo")
+    point_builder.metric('demo')
     point_builder.timestamp(int(round(datetime.datetime.now().timestamp())))
     point_builder.tag("name", ValueBuilder().with_str("test_tag1"))
     point_builder.field("value", ValueBuilder().with_double(0.4242))
@@ -93,11 +85,11 @@ if __name__ == "__main__":
     print("------------------------------------------------------------------")
 
     print("### read:")
-    req = QueryRequest("demo", "select * from demo;")
+    req = QueryRequest('demo', 'select * from demo')
     resp = sync_query(client, ctx, req)
     process_query_resp(resp)
     print("------------------------------------------------------------------")
 
     print("### drop table:")
-    drop_table()
+    drop_table(ctx)
     print("------------------------------------------------------------------")
