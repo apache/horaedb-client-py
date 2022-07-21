@@ -17,4 +17,4 @@ rev = "d71ac1f024f6204d86d445cd1bcddf170116b9bf"
 
 [lib]
 crate-type = ["cdylib"]
-name = "ceresdb_client_py"
+name = "ceresdb_client"

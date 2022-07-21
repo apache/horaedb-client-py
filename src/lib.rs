@@ -6,7 +6,7 @@ mod model;
 use pyo3::prelude::*;
 
 #[pymodule]
-fn ceresdb_client_py(_py: Python, m: &PyModule) -> PyResult<()> {
+fn ceresdb_client(_py: Python, m: &PyModule) -> PyResult<()> {
     unsafe {
         pyo3::ffi::PyEval_InitThreads();
     }

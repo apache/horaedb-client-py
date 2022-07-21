@@ -1,5 +1,5 @@
 [project]
-name = "ceresdb-client-py"
+name = "ceresdb-client"
 version = "0.1.0"
 description = "The python client for ceresdb."
 readme = "README.md"
