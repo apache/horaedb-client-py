@@ -13,6 +13,8 @@ CeresDB is a high-performance, distributed, schema-less, cloud native time-serie
 - [x] Query
 - [x] Write
 
+An [example](examples/read_write.py) is provided to show how to access ceresdb.
+
 ## Contributing
 Any contribution is welcome!
 

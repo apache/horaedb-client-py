@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.6"
 license = { file = "LICENSE" }
 authors = [
-    { name = "CeresDB Authors", email = "<ceresdbservice@gmail.com>" }
+    { name = "CeresDB Authors", email = "ceresdbservice@gmail.com" }
 ]
 keywords = ["CeresDB"]
 
