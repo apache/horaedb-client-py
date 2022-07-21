@@ -48,6 +48,11 @@ fn to_py_exception(err: impl Debug) -> PyErr {
 
 #[pymethods]
 impl Client {
+    #[new]
+    fn new(endpoint: String) -> Self {
+        Builder::new(endpoint).build()
+    }
+
     fn query<'p>(
         &self,
         py: Python<'p>,
