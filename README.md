@@ -1,6 +1,9 @@
 # CeresDB Python Client
 
 ![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)
+[![CI](https://github.com/CeresDB/ceresdb-client-py/actions/workflows/ci.yml/badge.svg)](https://github.com/CeresDB/ceresdb-client-py/actions/workflows/ci.yml)
+[![OpenIssue](https://img.shields.io/github/issues/CeresDB/ceresdb-client-py)](https://github.com/CeresDB/ceresdb-client-py/issues)
+[![Slack](https://badgen.net/badge/Slack/Join%20CeresDB/0abd59?icon=slack)](https://join.slack.com/t/ceresdbcommunity/shared_invite/zt-1au1ihbdy-5huC9J9s2462yBMIWmerTw)
 
 ## Introduction
 The python client for CeresDB.
@@ -8,7 +11,7 @@ CeresDB is a high-performance, distributed, schema-less, cloud native time-serie
 
 ## Support features
 - [x] Query
-- [ ] Write
+- [x] Write
 
 ## Contributing
 Any contribution is welcome!
