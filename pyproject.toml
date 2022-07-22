@@ -3,7 +3,7 @@ name = "ceresdb-client"
 version = "0.1.0"
 description = "The python client for ceresdb."
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.7"
 license = { file = "LICENSE" }
 authors = [
     { name = "CeresDB Authors", email = "ceresdbservice@gmail.com" }
