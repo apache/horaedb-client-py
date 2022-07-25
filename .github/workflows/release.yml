@@ -32,6 +32,12 @@ jobs:
         with:
           profile: minimal
       - uses: Swatinem/rust-cache@v2
+      - name: Build source distribution
+        uses: messense/maturin-action@v1
+        if: ${{ matrix.platform.os == 'ubuntu-latest' && matrix.platform.target == 'x86_64' }}
+        with:
+          command: sdist
+          args: --out dist
       - name: Build wheels
         uses: messense/maturin-action@v1
         with:
