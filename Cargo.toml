@@ -1,6 +1,6 @@
 [package]
 name = "ceresdb-client-py"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["CeresDB Authors <ceresdbservice@gmail.com>"]
 edition = "2021"
 
