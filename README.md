@@ -14,7 +14,7 @@ The python client for [CeresDB](https://github.com/CeresDB/ceresdb).
 - [x] Query
 - [x] Write
 
-An [example](examples/read_write.py) is provided to show how to access CeresDB.
+An [example](https://github.com/CeresDB/ceresdb-client-py/blob/main/examples/read_write.py) is provided to show how to access CeresDB.
 
 ## Contributing
 Any contribution is welcome!
