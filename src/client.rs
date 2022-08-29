@@ -64,7 +64,7 @@ impl Client {
         let raw_ctx = ctx.raw_ctx.clone();
         tokio::future_into_py(py, async move {
             let query_resp = raw_client
-                .query(&*raw_ctx, &raw_req)
+                .query(&raw_ctx, &raw_req)
                 .await
                 .map_err(to_py_exception)?;
             model::convert_query_response(query_resp).map_err(to_py_exception)
@@ -82,7 +82,7 @@ impl Client {
         let raw_req: rust_model::write::WriteRequest = (*req).clone().into();
         tokio::future_into_py(py, async move {
             let write_result = raw_client
-                .write(&*raw_ctx, &raw_req)
+                .write(&raw_ctx, &raw_req)
                 .await
                 .map_err(to_py_exception)?;
             Ok(WriteResponse {
