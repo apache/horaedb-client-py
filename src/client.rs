@@ -2,7 +2,11 @@
 
 use std::{fmt::Debug, sync::Arc, time::Duration};
 
-use ceresdb_client_rs::{client, model as rust_model, options, DbClient};
+use ceresdb_client_rs::{
+    db_client::{Builder as RustBuilder, DbClient, Mode as RustMode},
+    model as rust_model, RpcConfig as RustRpcConfig, RpcContext as RustRpcContext,
+    RpcOptions as RustRpcOptions,
+};
 use pyo3::{exceptions::PyException, prelude::*};
 use pyo3_asyncio::tokio;
 
@@ -13,20 +17,23 @@ pub fn register_py_module(m: &PyModule) -> PyResult<()> {
     m.add_class::<Client>()?;
     m.add_class::<Builder>()?;
     m.add_class::<RpcOptions>()?;
-    m.add_class::<GrpcConfig>()
+    m.add_class::<GrpcConfig>()?;
+    m.add_class::<Mode>()?;
+
+    Ok(())
 }
 
 #[pyclass]
 #[derive(Clone, Debug)]
 pub struct RpcContext {
-    pub raw_ctx: Arc<client::RpcContext>,
+    pub raw_ctx: Arc<RustRpcContext>,
 }
 
 #[pymethods]
 impl RpcContext {
     #[new]
     pub fn new(tenant: String, token: String) -> Self {
-        let raw_ctx = client::RpcContext { tenant, token };
+        let raw_ctx = RustRpcContext { tenant, token };
         Self {
             raw_ctx: Arc::new(raw_ctx),
         }
@@ -39,7 +46,7 @@ impl RpcContext {
 
 #[pyclass]
 pub struct Client {
-    raw_client: client::Client,
+    raw_client: Arc<dyn DbClient>,
 }
 
 fn to_py_exception(err: impl Debug) -> PyErr {
@@ -48,11 +55,6 @@ fn to_py_exception(err: impl Debug) -> PyErr {
 
 #[pymethods]
 impl Client {
-    #[new]
-    fn new(endpoint: String) -> Self {
-        Builder::new(endpoint).build()
-    }
-
     fn query<'p>(
         &self,
         py: Python<'p>,
@@ -86,12 +88,12 @@ impl Client {
         let raw_ctx = ctx.raw_ctx.clone();
         let raw_req: rust_model::write::WriteRequest = (*req).clone().into();
         tokio::future_into_py(py, async move {
-            let write_result = raw_client
+            let rust_resp = raw_client
                 .write(&raw_ctx, &raw_req)
                 .await
                 .map_err(to_py_exception)?;
             Ok(WriteResponse {
-                write_result: Arc::new(write_result),
+                raw_resp: Arc::new(rust_resp),
             })
         })
     }
@@ -143,32 +145,48 @@ pub struct RpcOptions {
     pub write_timeout_ms: u64,
     #[pyo3(get, set)]
     pub read_timeout_ms: u64,
+    #[pyo3(get, set)]
+    pub connect_timeout_ms: u64,
 }
 
 #[pymethods]
 impl RpcOptions {
     #[new]
-    pub fn new(write_timeout_ms: u64, read_timeout_ms: u64) -> Self {
+    pub fn new(write_timeout_ms: u64, read_timeout_ms: u64, connect_timeout_ms: u64) -> Self {
         Self {
             write_timeout_ms,
             read_timeout_ms,
+            connect_timeout_ms,
         }
     }
 }
 
 #[pyclass]
 pub struct Builder {
-    raw_builder: client::Builder,
+    raw_builder: RustBuilder,
+}
+
+#[pyclass]
+#[derive(Debug, Clone)]
+pub enum Mode {
+    Standalone,
+    Cluster,
 }
 
 #[pymethods]
 impl Builder {
     #[new]
-    pub fn new(endpoint: String) -> Self {
-        let builder = client::Builder::new(endpoint);
-        Self {
+    pub fn new(endpoint: String, mode: Mode) -> PyResult<Self> {
+        let rust_mode = match mode {
+            Mode::Standalone => RustMode::Standalone,
+            Mode::Cluster => RustMode::Cluster,
+        };
+
+        let builder = RustBuilder::new(endpoint, rust_mode);
+
+        Ok(Self {
             raw_builder: builder,
-        }
+        })
     }
 
     pub fn set_grpc_config(&mut self, conf: GrpcConfig) {
@@ -177,7 +195,7 @@ impl Builder {
         } else {
             None
         };
-        let raw_grpc_config = options::GrpcConfig {
+        let raw_grpc_config = RustRpcConfig {
             thread_num,
             max_send_msg_len: conf.max_send_msg_len,
             max_recv_msg_len: conf.max_recv_msg_len,
@@ -188,9 +206,10 @@ impl Builder {
     }
 
     pub fn set_rpc_options(&mut self, opts: RpcOptions) {
-        let raw_rpc_options = options::RpcOptions {
+        let raw_rpc_options = RustRpcOptions {
             write_timeout: Duration::from_millis(opts.write_timeout_ms),
             read_timeout: Duration::from_millis(opts.read_timeout_ms),
+            connect_timeout: Duration::from_millis(opts.read_timeout_ms),
         };
         self.raw_builder = self.raw_builder.clone().rpc_opts(raw_rpc_options);
     }

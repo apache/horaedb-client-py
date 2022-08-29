@@ -5,10 +5,10 @@
 use std::sync::Arc;
 
 use ceresdb_client_rs::{
-    is_reserved_column_name, model as rust_model,
+    model as rust_model,
     model::{
         value::{TimestampMs, Value as RustValue},
-        write::{WriteRequestBuilder, WriteResult},
+        write::{is_reserved_column_name, WriteRequestBuilder, WriteResponse as RustWriteResponse},
         Datum, QueryResponse as RustQueryResponse,
     },
 };
@@ -450,20 +450,16 @@ impl From<WriteRequest> for rust_model::write::WriteRequest {
 
 #[pyclass]
 pub struct WriteResponse {
-    pub write_result: Arc<WriteResult>,
+    pub raw_resp: Arc<RustWriteResponse>,
 }
 
 #[pymethods]
 impl WriteResponse {
     pub fn get_success(&self) -> u32 {
-        self.write_result.success
+        self.raw_resp.success
     }
 
     pub fn get_failed(&self) -> u32 {
-        self.write_result.failed
-    }
-
-    pub fn get_metrics(&self) -> Vec<String> {
-        self.write_result.metrics.clone()
+        self.raw_resp.failed
     }
 }
