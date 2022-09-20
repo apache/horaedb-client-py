@@ -63,7 +63,7 @@ def process_write_resp(resp):
 
 
 if __name__ == "__main__":
-    client = Builder("100.81.235.47:8831", Mode.Standalone).build()
+    client = Builder("127.0.0.1:8831", Mode.Standalone).build()
     ctx = RpcContext("public", "")
 
     print("------------------------------------------------------------------")
