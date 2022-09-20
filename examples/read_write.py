@@ -6,21 +6,21 @@ import asyncio
 
 
 def create_table(ctx):
-    create_table_sql = 'CREATE TABLE demo ( \
+    create_table_sql = 'CREATE TABLE IF NOT EXISTS demo ( \
         name string TAG, \
         value double, \
         t timestamp NOT NULL, \
         TIMESTAMP KEY(t)) ENGINE=Analytic with (enable_ttl=false)'
 
-    req = QueryRequest('demo', create_table_sql)
+    req = QueryRequest(['demo'], create_table_sql)
     _resp = sync_query(client, ctx, req)
     print("Create table success!")
 
 
 def drop_table(ctx):
-    create_table_sql = 'DROP TABLE demo'
+    drop_table_sql = 'DROP TABLE demo'
 
-    req = QueryRequest('demo', create_table_sql)
+    req = QueryRequest(['demo'], drop_table_sql)
     _resp = sync_query(client, ctx, req)
     print("Drop table success!")
 
@@ -59,7 +59,7 @@ def sync_write(cli, ctx, req):
 
 
 def process_write_resp(resp):
-    print("success:{}, failed:{}, metrics:{}".format(resp.get_success(), resp.get_failed(), resp.get_metrics()))
+    print("success:{}, failed:{}".format(resp.get_success(), resp.get_failed()))
 
 
 if __name__ == "__main__":
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     print("------------------------------------------------------------------")
 
     print("### read:")
-    req = QueryRequest('demo', 'select * from demo')
+    req = QueryRequest(['demo'], 'select * from demo')
     resp = sync_query(client, ctx, req)
     process_query_resp(resp)
     print("------------------------------------------------------------------")
