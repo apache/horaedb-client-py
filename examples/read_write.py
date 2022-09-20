@@ -18,9 +18,9 @@ def create_table(ctx):
 
 
 def drop_table(ctx):
-    create_table_sql = 'DROP TABLE demo'
+    drop_table_sql = 'DROP TABLE demo'
 
-    req = QueryRequest(['demo'], create_table_sql)
+    req = QueryRequest(['demo'], drop_table_sql)
     _resp = sync_query(client, ctx, req)
     print("Drop table success!")
 
