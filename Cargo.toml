@@ -1,6 +1,6 @@
 [package]
 name = "ceresdb-client-py"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["CeresDB Authors <ceresdbservice@gmail.com>"]
 edition = "2021"
 
@@ -13,7 +13,7 @@ tokio = { version = "1", features = ["sync"] }
 
 [dependencies.ceresdb-client-rs]
 git = "https://github.com/CeresDB/ceresdb-client-rs.git"
-rev = "dc3f84a19a941059ab9022b4f8376121551114dc"
+rev = "5d629f113a1698a0401215a040202abf76b825ff"
 
 [lib]
 crate-type = ["cdylib"]
