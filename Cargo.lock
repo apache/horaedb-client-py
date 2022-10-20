@@ -140,7 +140,7 @@ checksum = "2fff2a6927b3bb87f9595d67196a70493f627687a71d87a0d692242c33f58c11"
 
 [[package]]
 name = "ceresdb-client-py"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "cc",
  "ceresdb-client-rs",
@@ -152,7 +152,7 @@ dependencies = [
 [[package]]
 name = "ceresdb-client-rs"
 version = "0.1.0"
-source = "git+https://github.com/CeresDB/ceresdb-client-rs.git?rev=dc3f84a19a941059ab9022b4f8376121551114dc#dc3f84a19a941059ab9022b4f8376121551114dc"
+source = "git+https://github.com/CeresDB/ceresdb-client-rs.git?rev=5d629f113a1698a0401215a040202abf76b825ff#5d629f113a1698a0401215a040202abf76b825ff"
 dependencies = [
  "async-trait",
  "avro-rs",
