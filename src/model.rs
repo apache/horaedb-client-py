@@ -12,7 +12,7 @@ use ceresdb_client_rs::{
         Datum, QueryResponse as RustQueryResponse,
     },
 };
-use pyo3::{exceptions::PyTypeError, prelude::*};
+use pyo3::{class::basic::CompareOp, exceptions::PyTypeError, prelude::*};
 
 pub fn register_py_module(m: &PyModule) -> PyResult<()> {
     m.add_class::<QueryRequest>()?;
@@ -27,6 +27,40 @@ pub fn register_py_module(m: &PyModule) -> PyResult<()> {
     m.add_class::<Point>()?;
     m.add_class::<WriteRequest>()?;
     m.add_class::<WriteResponse>()?;
+
+    m.add("ColumnDataTypeNull", ColumnDataType(COLUMN_DATA_TYPE_NULL))?;
+    m.add(
+        "ColumnDataTypeTimestampMillis",
+        ColumnDataType(COLUMN_DATA_TYPE_TIMESTAMP_MILLIS),
+    )?;
+    m.add(
+        "ColumnDataTypeDouble",
+        ColumnDataType(COLUMN_DATA_TYPE_DOUBLE),
+    )?;
+    m.add(
+        "ColumnDataTypeFloat",
+        ColumnDataType(COLUMN_DATA_TYPE_FLOAT),
+    )?;
+    m.add(
+        "ColumnDataTypeBytes",
+        ColumnDataType(COLUMN_DATA_TYPE_BYTES),
+    )?;
+    m.add(
+        "ColumnDataTypeString",
+        ColumnDataType(COLUMN_DATA_TYPE_STRING),
+    )?;
+    m.add(
+        "ColumnDataTypeInt64",
+        ColumnDataType(COLUMN_DATA_TYPE_INT64),
+    )?;
+    m.add(
+        "ColumnDataTypeInt32",
+        ColumnDataType(COLUMN_DATA_TYPE_INT32),
+    )?;
+    m.add(
+        "ColumnDataTypeBoolean",
+        ColumnDataType(COLUMN_DATA_TYPE_BOOLEAN),
+    )?;
 
     Ok(())
 }
@@ -87,6 +121,17 @@ impl ToString for ColumnDataType {
 impl ColumnDataType {
     pub fn __str__(&self) -> String {
         self.to_string()
+    }
+
+    fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
+        match op {
+            CompareOp::Lt => Ok(self.0 < other.0),
+            CompareOp::Le => Ok(self.0 <= other.0),
+            CompareOp::Eq => Ok(self.0 == other.0),
+            CompareOp::Ne => Ok(self.0 != other.0),
+            CompareOp::Gt => Ok(self.0 > other.0),
+            CompareOp::Ge => Ok(self.0 >= other.0),
+        }
     }
 }
 

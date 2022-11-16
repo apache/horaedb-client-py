@@ -7,7 +7,7 @@ use ceresdb_client_rs::{
     model as rust_model, RpcConfig as RustRpcConfig, RpcContext as RustRpcContext,
     RpcOptions as RustRpcOptions,
 };
-use pyo3::{exceptions::PyException, prelude::*};
+use pyo3::{class::basic::CompareOp, exceptions::PyException, prelude::*};
 use pyo3_asyncio::tokio;
 
 use crate::{model, model::WriteResponse};
@@ -19,6 +19,8 @@ pub fn register_py_module(m: &PyModule) -> PyResult<()> {
     m.add_class::<RpcOptions>()?;
     m.add_class::<GrpcConfig>()?;
     m.add_class::<Mode>()?;
+    m.add("ModeStandalone", Mode(MODE_STANDALONE))?;
+    m.add("ModeCluster", Mode(MODE_CLUSTER))?;
 
     Ok(())
 }
@@ -189,6 +191,17 @@ impl ToString for Mode {
 impl Mode {
     pub fn __str__(&self) -> String {
         self.to_string()
+    }
+
+    fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
+        match op {
+            CompareOp::Lt => Ok(self.0 < other.0),
+            CompareOp::Le => Ok(self.0 <= other.0),
+            CompareOp::Eq => Ok(self.0 == other.0),
+            CompareOp::Ne => Ok(self.0 != other.0),
+            CompareOp::Gt => Ok(self.0 > other.0),
+            CompareOp::Ge => Ok(self.0 >= other.0),
+        }
     }
 }
 
