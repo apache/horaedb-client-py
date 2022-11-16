@@ -52,31 +52,48 @@ impl QueryRequest {
 
 #[pyclass]
 #[derive(Clone, Copy, Debug)]
-pub enum ColumnDataType {
-    Null = 0,
-    TimestampMillis,
-    Double,
-    Float,
-    Bytes,
-    String,
-    Int64,
-    Int32,
-    Boolean,
+pub struct ColumnDataType(u8);
+
+pub const COLUMN_DATA_TYPE_NULL: u8 = 0;
+pub const COLUMN_DATA_TYPE_TIMESTAMP_MILLIS: u8 = 1;
+pub const COLUMN_DATA_TYPE_DOUBLE: u8 = 2;
+pub const COLUMN_DATA_TYPE_FLOAT: u8 = 3;
+pub const COLUMN_DATA_TYPE_BYTES: u8 = 4;
+pub const COLUMN_DATA_TYPE_STRING: u8 = 5;
+pub const COLUMN_DATA_TYPE_INT64: u8 = 6;
+pub const COLUMN_DATA_TYPE_INT32: u8 = 7;
+pub const COLUMN_DATA_TYPE_BOOLEAN: u8 = 8;
+
+impl ToString for ColumnDataType {
+    fn to_string(&self) -> String {
+        let typ_desc = match self.0 {
+            COLUMN_DATA_TYPE_NULL => "Null",
+            COLUMN_DATA_TYPE_TIMESTAMP_MILLIS => "TimestampMills",
+            COLUMN_DATA_TYPE_DOUBLE => "Double",
+            COLUMN_DATA_TYPE_FLOAT => "Float",
+            COLUMN_DATA_TYPE_BYTES => "Bytes",
+            COLUMN_DATA_TYPE_STRING => "String",
+            COLUMN_DATA_TYPE_INT64 => "Int64",
+            COLUMN_DATA_TYPE_INT32 => "Int32",
+            COLUMN_DATA_TYPE_BOOLEAN => "Boolean",
+            _ => return format!("Unknown data type:{}", self.0),
+        };
+
+        typ_desc.to_string()
+    }
+}
+
+#[pymethods]
+impl ColumnDataType {
+    pub fn __str__(&self) -> String {
+        self.to_string()
+    }
 }
 
 impl From<rust_model::ColumnDataType> for ColumnDataType {
     fn from(typ: rust_model::ColumnDataType) -> Self {
-        match typ {
-            rust_model::ColumnDataType::Null => ColumnDataType::Null,
-            rust_model::ColumnDataType::TimestampMillis => ColumnDataType::TimestampMillis,
-            rust_model::ColumnDataType::Double => ColumnDataType::Double,
-            rust_model::ColumnDataType::Float => ColumnDataType::Float,
-            rust_model::ColumnDataType::Bytes => ColumnDataType::Bytes,
-            rust_model::ColumnDataType::String => ColumnDataType::String,
-            rust_model::ColumnDataType::Int64 => ColumnDataType::Int64,
-            rust_model::ColumnDataType::Int32 => ColumnDataType::Int32,
-            rust_model::ColumnDataType::Boolean => ColumnDataType::Boolean,
-        }
+        let typ_num = typ as u8;
+        Self(typ_num)
     }
 }
 

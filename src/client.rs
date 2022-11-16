@@ -167,21 +167,55 @@ pub struct Builder {
 }
 
 #[pyclass]
-#[derive(Debug, Clone)]
-pub enum Mode {
-    Standalone,
-    Cluster,
+#[derive(Clone, Copy, Debug)]
+pub struct Mode(u8);
+
+pub const MODE_STANDALONE: u8 = 0;
+pub const MODE_CLUSTER: u8 = 1;
+
+impl ToString for Mode {
+    fn to_string(&self) -> String {
+        let type_desc = match self.0 {
+            MODE_STANDALONE => "standalone",
+            MODE_CLUSTER => "cluster",
+            _ => return format!("Unknown mode:{}", self.0),
+        };
+
+        type_desc.to_string()
+    }
+}
+
+#[pymethods]
+impl Mode {
+    pub fn __str__(&self) -> String {
+        self.to_string()
+    }
+}
+
+impl TryFrom<Mode> for RustMode {
+    type Error = PyErr;
+
+    fn try_from(mode: Mode) -> Result<Self, Self::Error> {
+        let rust_mode = match mode.0 {
+            MODE_STANDALONE => RustMode::Standalone,
+            MODE_CLUSTER => RustMode::Cluster,
+            _ => {
+                return Err(to_py_exception(format!(
+                    "invalid mode:{}",
+                    mode.to_string(),
+                )))
+            }
+        };
+
+        Ok(rust_mode)
+    }
 }
 
 #[pymethods]
 impl Builder {
     #[new]
-    pub fn new(endpoint: String, mode: Mode) -> PyResult<Self> {
-        let rust_mode = match mode {
-            Mode::Standalone => RustMode::Standalone,
-            Mode::Cluster => RustMode::Cluster,
-        };
-
+    pub fn new(endpoint: String, mode: u8) -> PyResult<Self> {
+        let rust_mode = RustMode::try_from(Mode(mode))?;
         let builder = RustBuilder::new(endpoint, rust_mode);
 
         Ok(Self {
