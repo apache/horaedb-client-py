@@ -113,9 +113,11 @@ pub struct GrpcConfig {
     #[pyo3(get, set)]
     pub max_recv_msg_len: i32,
     #[pyo3(get, set)]
-    pub keepalive_time_ms: u64,
+    pub keep_alive_interval_ms: u64,
     #[pyo3(get, set)]
-    pub keepalive_timeout_ms: u64,
+    pub keep_alive_timeout_ms: u64,
+    #[pyo3(get, set)]
+    pub keep_alive_while_idle: bool,
 }
 
 #[pymethods]
@@ -125,15 +127,17 @@ impl GrpcConfig {
         thread_num: i32,
         max_send_msg_len: i32,
         max_recv_msg_len: i32,
-        keepalive_time_ms: u64,
-        keepalive_timeout_ms: u64,
+        keep_alive_interval_ms: u64,
+        keep_alive_timeout_ms: u64,
+        keep_alive_while_idle: bool,
     ) -> Self {
         Self {
             thread_num,
             max_send_msg_len,
             max_recv_msg_len,
-            keepalive_time_ms,
-            keepalive_timeout_ms,
+            keep_alive_interval_ms,
+            keep_alive_timeout_ms,
+            keep_alive_while_idle,
         }
     }
 }
@@ -199,8 +203,9 @@ impl Builder {
             thread_num,
             max_send_msg_len: conf.max_send_msg_len,
             max_recv_msg_len: conf.max_recv_msg_len,
-            keepalive_time: Duration::from_millis(conf.keepalive_time_ms),
-            keepalive_timeout: Duration::from_millis(conf.keepalive_timeout_ms),
+            keep_alive_interval: Duration::from_millis(conf.keep_alive_interval_ms),
+            keep_alive_timeout: Duration::from_millis(conf.keep_alive_timeout_ms),
+            keep_alive_while_idle: conf.keep_alive_while_idle,
         };
         self.raw_builder = self.raw_builder.clone().grpc_config(raw_grpc_config);
     }
