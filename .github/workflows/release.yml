@@ -6,6 +6,12 @@ on:
   push:
     tags:
       - '*'
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - 'etc/**'
+      - '**.md'
 
 jobs:
   build:
@@ -32,6 +38,15 @@ jobs:
         with:
           profile: minimal
       - uses: Swatinem/rust-cache@v2
+      - name: Install dependencies for linux
+        if: ${{ matrix.platform.os == 'ubuntu-latest' }}
+        run: |
+          sudo apt update
+          sudo apt install --yes protobuf-compiler
+      - name: Install dependencies for macos
+        if: ${{ matrix.platform.os == 'macos-latest' }}
+        run: |
+          brew install protobuf
       - name: Build source distribution
         uses: messense/maturin-action@v1
         if: ${{ matrix.platform.os == 'ubuntu-latest' && matrix.platform.target == 'x86_64' }}
@@ -44,28 +59,28 @@ jobs:
           target: ${{ matrix.platform.target }}
           manylinux: manylinux2014
           args: --release --out dist
-      - name: Upload wheels
-        uses: actions/upload-artifact@v2
-        with:
-          name: wheels
-          path: dist
+      # - name: Upload wheels
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: wheels
+      #     path: dist
 
-  release:
-    name: Release
-    runs-on: ubuntu-latest
-    if: "startsWith(github.ref, 'refs/tags/')"
-    needs: [ build ]
-    steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: wheels
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-      - name: Publish to PyPI
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-        run: |
-          pip install twine
-          twine upload --skip-existing *
+  # release:
+  #   name: Release
+  #   runs-on: ubuntu-latest
+  #   if: "startsWith(github.ref, 'refs/tags/')"
+  #   needs: [ build ]
+  #   steps:
+  #     - uses: actions/download-artifact@v2
+  #       with:
+  #         name: wheels
+  #     - uses: actions/setup-python@v4
+  #       with:
+  #         python-version: '3.10'
+  #     - name: Publish to PyPI
+  #       env:
+  #         TWINE_USERNAME: __token__
+  #         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+  #       run: |
+  #         pip install twine
+  #         twine upload --skip-existing *
