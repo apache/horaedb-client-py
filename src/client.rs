@@ -7,7 +7,7 @@ use ceresdb_client_rs::{
     model as rust_model, RpcConfig as RustRpcConfig, RpcContext as RustRpcContext,
     RpcOptions as RustRpcOptions,
 };
-use pyo3::{exceptions::PyException, prelude::*};
+use pyo3::{class::basic::CompareOp, exceptions::PyException, prelude::*};
 use pyo3_asyncio::tokio;
 
 use crate::{model, model::WriteResponse};
@@ -19,6 +19,8 @@ pub fn register_py_module(m: &PyModule) -> PyResult<()> {
     m.add_class::<RpcOptions>()?;
     m.add_class::<GrpcConfig>()?;
     m.add_class::<Mode>()?;
+    m.add("ModeStandalone", Mode(MODE_STANDALONE))?;
+    m.add("ModeCluster", Mode(MODE_CLUSTER))?;
 
     Ok(())
 }
@@ -174,21 +176,66 @@ pub struct Builder {
 }
 
 #[pyclass]
-#[derive(Debug, Clone)]
-pub enum Mode {
-    Standalone,
-    Cluster,
+#[derive(Clone, Copy, Debug)]
+pub struct Mode(u8);
+
+pub const MODE_STANDALONE: u8 = 0;
+pub const MODE_CLUSTER: u8 = 1;
+
+impl ToString for Mode {
+    fn to_string(&self) -> String {
+        let type_desc = match self.0 {
+            MODE_STANDALONE => "standalone",
+            MODE_CLUSTER => "cluster",
+            _ => return format!("Unknown mode:{}", self.0),
+        };
+
+        type_desc.to_string()
+    }
+}
+
+#[pymethods]
+impl Mode {
+    pub fn __str__(&self) -> String {
+        self.to_string()
+    }
+
+    fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
+        match op {
+            CompareOp::Lt => Ok(self.0 < other.0),
+            CompareOp::Le => Ok(self.0 <= other.0),
+            CompareOp::Eq => Ok(self.0 == other.0),
+            CompareOp::Ne => Ok(self.0 != other.0),
+            CompareOp::Gt => Ok(self.0 > other.0),
+            CompareOp::Ge => Ok(self.0 >= other.0),
+        }
+    }
+}
+
+impl TryFrom<Mode> for RustMode {
+    type Error = PyErr;
+
+    fn try_from(mode: Mode) -> Result<Self, Self::Error> {
+        let rust_mode = match mode.0 {
+            MODE_STANDALONE => RustMode::Standalone,
+            MODE_CLUSTER => RustMode::Cluster,
+            _ => {
+                return Err(to_py_exception(format!(
+                    "invalid mode:{}",
+                    mode.to_string(),
+                )))
+            }
+        };
+
+        Ok(rust_mode)
+    }
 }
 
 #[pymethods]
 impl Builder {
     #[new]
     pub fn new(endpoint: String, mode: Mode) -> PyResult<Self> {
-        let rust_mode = match mode {
-            Mode::Standalone => RustMode::Standalone,
-            Mode::Cluster => RustMode::Cluster,
-        };
-
+        let rust_mode = RustMode::try_from(mode)?;
         let builder = RustBuilder::new(endpoint, rust_mode);
 
         Ok(Self {
