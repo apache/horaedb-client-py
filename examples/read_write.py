@@ -1,7 +1,7 @@
 # Copyright 2022 CeresDB Project Authors. Licensed under Apache-2.0.
 
 import datetime
-from ceresdb_client import Builder, RpcContext, PointBuilder, ValueBuilder, WriteRequest, QueryRequest, Mode
+from ceresdb_client import Builder, RpcContext, PointBuilder, ValueBuilder, WriteRequest, QueryRequest, ModeStandalone
 import asyncio
 
 
@@ -59,11 +59,12 @@ def sync_write(cli, ctx, req):
 
 
 def process_write_resp(resp):
-    print("success:{}, failed:{}".format(resp.get_success(), resp.get_failed()))
+    print("success:{}, failed:{}".format(
+        resp.get_success(), resp.get_failed()))
 
 
 if __name__ == "__main__":
-    client = Builder("127.0.0.1:8831", Mode.Standalone).build()
+    client = Builder("127.0.0.1:8831", ModeStandalone).build()
     ctx = RpcContext("public", "")
 
     print("------------------------------------------------------------------")
