@@ -26,17 +26,20 @@ pub fn register_py_module(m: &PyModule) -> PyResult<()> {
 #[pyclass]
 #[derive(Clone, Debug)]
 pub struct RpcContext {
-    pub raw_ctx: Arc<RustRpcContext>,
+    pub raw_ctx: RustRpcContext,
 }
 
 #[pymethods]
 impl RpcContext {
     #[new]
     pub fn new(tenant: String, token: String) -> Self {
-        let raw_ctx = RustRpcContext { tenant, token };
-        Self {
-            raw_ctx: Arc::new(raw_ctx),
-        }
+        let raw_ctx = RustRpcContext::new(tenant, token);
+        Self { raw_ctx }
+    }
+
+    pub fn set_timeout_in_millis(&mut self, timeout_millis: u64) {
+        let timeout = Duration::from_millis(timeout_millis);
+        self.raw_ctx.timeout = Some(timeout);
     }
 
     pub fn __str__(&self) -> String {
