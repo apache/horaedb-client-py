@@ -13,7 +13,7 @@ tokio = { version = "1", features = ["sync"] }
 
 [dependencies.ceresdb-client-rs]
 git = "https://github.com/CeresDB/ceresdb-client-rs.git"
-rev = "88415ff6cca3ca87ef423a4f255f11ddca71c9f6"
+rev = "575466b0619341802f29e0dc71e8e517487cab4e"
 
 [lib]
 crate-type = ["cdylib"]
