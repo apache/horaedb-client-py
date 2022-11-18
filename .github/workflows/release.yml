@@ -25,8 +25,6 @@ jobs:
             target: aarch64
           - os: ubuntu-latest
             target: x86_64
-          - os: windows-latest
-            target: x86_64
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v4
@@ -38,15 +36,6 @@ jobs:
         with:
           profile: minimal
       - uses: Swatinem/rust-cache@v2
-      - name: Install dependencies for linux
-        if: ${{ matrix.platform.os == 'ubuntu-latest' }}
-        run: |
-          sudo apt update
-          sudo apt install --yes protobuf-compiler
-      - name: Install dependencies for macos
-        if: ${{ matrix.platform.os == 'macos-latest' }}
-        run: |
-          brew install protobuf
       - name: Build source distribution
         uses: messense/maturin-action@v1
         if: ${{ matrix.platform.os == 'ubuntu-latest' && matrix.platform.target == 'x86_64' }}
