@@ -1,8 +1,8 @@
 # Copyright 2022 CeresDB Project Authors. Licensed under Apache-2.0.
 
+import asyncio
 import datetime
 from ceresdb_client import Builder, RpcContext, PointBuilder, ValueBuilder, WriteRequest, SqlQueryRequest, Mode, RpcConfig
-import asyncio
 
 
 def create_table(ctx):
