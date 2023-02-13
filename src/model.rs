@@ -220,7 +220,7 @@ impl Row {
         } else {
             let col = Column {
                 row_idx: self.row_idx,
-                col_idx: col_idx,
+                col_idx,
                 rust_rows: self.rust_rows.clone(),
             };
             Ok(col)
@@ -233,7 +233,7 @@ impl Row {
         if let Some(col_idx) = col_idx {
             let col = Column {
                 row_idx: self.row_idx,
-                col_idx: col_idx,
+                col_idx,
                 rust_rows: self.rust_rows.clone(),
             };
             Ok(col)
@@ -430,7 +430,7 @@ impl PointBuilder {
             .take()
             .unwrap()
             .build()
-            .map_err(|e| PyTypeError::new_err(e))?;
+            .map_err(PyTypeError::new_err)?;
 
         Ok(Point { rust_point })
     }

@@ -145,6 +145,12 @@ impl RpcConfig {
     }
 }
 
+impl Default for RpcConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl From<RpcConfig> for RustRpcConfig {
     fn from(config: RpcConfig) -> Self {
         let thread_num = if config.thread_num > 0 {
