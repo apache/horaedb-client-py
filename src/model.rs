@@ -107,7 +107,7 @@ impl From<RustDataType> for DataType {
 }
 
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Column {
     row_idx: usize,
     col_idx: usize,
@@ -142,7 +142,7 @@ impl Column {
         }
     }
 
-    pub fn value_type(&self) -> DataType {
+    pub fn data_type(&self) -> DataType {
         self.get_rust_col().value.data_type().into()
     }
 
@@ -471,7 +471,7 @@ impl AsRef<RustWriteRequest> for WriteRequest {
 }
 
 #[pyclass]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct WriteResponse {
     rust_response: RustWriteResponse,
 }
@@ -482,7 +482,7 @@ impl WriteResponse {
         self.rust_response.success
     }
 
-    pub fn get_failed_points(&self) -> u32 {
+    pub fn get_failed(&self) -> u32 {
         self.rust_response.failed
     }
 

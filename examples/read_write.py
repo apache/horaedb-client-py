@@ -43,7 +43,7 @@ def process_query_resp(resp):
         row = resp.get_row(row_idx)
         for col_idx in range(0, row.num_cols()):
             col = row.column_by_idx(col_idx)
-            row_tokens.append(f"{col.name()}:{col.value()}#{col.type()}")
+            row_tokens.append(f"{col.name()}:{col.value()}#{col.data_type()}")
         print(f"row#{col_idx}: {','.join(row_tokens)}")
 
 
@@ -79,10 +79,11 @@ if __name__ == "__main__":
 
     print("### write:")
     point_builder = PointBuilder('demo')
-    point_builder.timestamp(int(round(datetime.datetime.now().timestamp())))
-    point_builder.tag("name", ValueBuilder().with_str("test_tag1"))
-    point_builder.field("value", ValueBuilder().with_double(0.4242))
-    point = point_builder.build()
+    point = point_builder \
+        .timestamp(int(round(datetime.datetime.now().timestamp()))) \
+        .tag("name", ValueBuilder().string("test_tag1")) \
+        .field("value", ValueBuilder().double(0.4242)) \
+        .build()
     write_request = WriteRequest()
     write_request.add_point(point)
     resp = sync_write(client, ctx, write_request)
