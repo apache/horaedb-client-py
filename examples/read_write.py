@@ -1,7 +1,7 @@
 # Copyright 2022 CeresDB Project Authors. Licensed under Apache-2.0.
 
 import datetime
-from ceresdb_client import Builder, RpcContext, PointBuilder, ValueBuilder, WriteRequest, QueryRequest, Mode
+from ceresdb_client import Builder, RpcContext, PointBuilder, ValueBuilder, WriteRequest, SqlQueryRequest, Mode
 import asyncio
 
 
@@ -40,12 +40,10 @@ def process_query_resp(resp):
     print(f"Rows in the resp:")
     for row_idx in range(0, resp.row_num()):
         row_tokens = []
-        schema = resp.schema()
         row = resp.get_row(row_idx)
-        for col_idx in range(0, schema.num_cols()):
-            name = schema.get_column_schema(col_idx).name()
-            val = row.get_column_value(col_idx)
-            row_tokens.append(f"{name}:{val}")
+        for col_idx in range(0, row.num_cols()):
+            col = row.column_by_idx(col_idx)
+            row_tokens.append(f"{col.name()}:{col.value()}#{col.type()}")
         print(f"row#{col_idx}: {','.join(row_tokens)}")
 
 
@@ -59,11 +57,12 @@ def sync_write(cli, ctx, req):
 
 
 def process_write_resp(resp):
-    print("success:{}, failed:{}".format(resp.get_success(), resp.get_failed()))
+    print("success:{}, failed:{}".format(
+        resp.get_success(), resp.get_failed()))
 
 
 if __name__ == "__main__":
-    client = Builder("127.0.0.1:8831", Mode.Standalone).build()
+    client = Builder("127.0.0.1:8831", Mode.Direct).build()
     ctx = RpcContext("public", "")
 
     print("------------------------------------------------------------------")
@@ -72,8 +71,7 @@ if __name__ == "__main__":
     print("------------------------------------------------------------------")
 
     print("### write:")
-    point_builder = PointBuilder()
-    point_builder.metric('demo')
+    point_builder = PointBuilder('demo')
     point_builder.timestamp(int(round(datetime.datetime.now().timestamp())))
     point_builder.tag("name", ValueBuilder().with_str("test_tag1"))
     point_builder.field("value", ValueBuilder().with_double(0.4242))
@@ -85,7 +83,7 @@ if __name__ == "__main__":
     print("------------------------------------------------------------------")
 
     print("### read:")
-    req = QueryRequest(['demo'], 'select * from demo')
+    req = SqlQueryRequest(['demo'], 'select * from demo')
     resp = sync_query(client, ctx, req)
     process_query_resp(resp)
     print("------------------------------------------------------------------")

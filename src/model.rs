@@ -201,6 +201,10 @@ impl Row {
         }
     }
 
+    pub fn num_cols(&self) -> usize {
+        self.rust_rows[self.row_idx].columns().len()
+    }
+
     pub fn __str__(&self) -> String {
         format!("{:?}", self)
     }

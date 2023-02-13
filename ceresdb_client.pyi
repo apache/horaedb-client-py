@@ -3,14 +3,17 @@ from typing import Any, List, Optional
 
 # models
 
+
 class SqlQueryRequest:
     def __init__(self, tables: List[str], sql: str): ...
+
 
 class SqlQueryResponse:
     def row_num(self) -> int: ...
     def get_row(self, idx: int) -> Optional[Row]: ...
     @property
     def affected_rows(self) -> int: ...
+
 
 class DataType(enum.IntEnum):
     Null = 0
@@ -29,17 +32,22 @@ class DataType(enum.IntEnum):
     Int8 = 13
     Boolean = 14
 
+
 class Column:
     def value(self) -> Any: ...
     def value_type(self) -> DataType: ...
     def name(self) -> str: ...
 
+
 class Row:
     def column_by_idx(self, idx: int) -> Any: ...
     def column_by_name(self, name: str) -> Any: ...
+    def num_cols(self) -> int: ...
+
 
 class Value:
     pass
+
 
 class ValueBuilder:
     def __init__(self): ...
@@ -58,8 +66,10 @@ class ValueBuilder:
     def uint8(self, val: int) -> Value: ...
     def bool(self, val: bool) -> Value: ...
 
+
 class Point:
     pass
+
 
 class PointBuilder:
     def __init__(self, table: str) -> PointBuilder: ...
@@ -69,10 +79,12 @@ class PointBuilder:
     def field(self, name: str, val: Value) -> PointBuilder: ...
     def build(self) -> Point: ...
 
+
 class WriteRequest:
     def __init__(self): ...
     def add_point(self, point: Point): ...
     def add_points(self, point: List[Point]): ...
+
 
 class WriteResponse:
     def get_success(self) -> int: ...
@@ -80,10 +92,15 @@ class WriteResponse:
 
 # client
 
+
 class Client:
     def __init__(self, endpoint: str): ...
-    async def query(self, ctx: RpcContext, req: QueryRequest) -> QueryResponse: ...
-    async def write(self, ctx: RpcContext, req: WriteRequest) -> WriteResponse: ...
+
+    async def query(self, ctx: RpcContext,
+                    req: QueryRequest) -> QueryResponse: ...
+    async def write(self, ctx: RpcContext,
+                    req: WriteRequest) -> WriteResponse: ...
+
 
 class RpcConfig:
     def __init__(
@@ -100,15 +117,18 @@ class RpcConfig:
     keepalive_time_ms: int
     keepalive_timeout_ms: int
 
+
 class RpcContext:
     def __init__(self): ...
     def set_timeout_in_millis(self, timeout_millis: int): ...
     def set_database(self, database: str): ...
 
+
 class RpcOptions:
     def __init__(self, write_timeout_ms: int, read_timeout_ms: int): ...
     write_timeout_ms: int
     read_timeout_ms: int
+
 
 class Builder:
     def __init__(self, endpoint: str): ...
