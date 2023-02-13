@@ -4,7 +4,7 @@ use std::{fmt::Debug, sync::Arc, time::Duration};
 
 use ceresdb_client_rs::{
     db_client::{Builder as RustBuilder, DbClient, Mode as RustMode},
-    RpcConfig as RustRpcConfig, RpcContext as RustRpcContext, RpcOptions as RustRpcOptions,
+    RpcConfig as RustRpcConfig, RpcContext as RustRpcContext,
 };
 use pyo3::{exceptions::PyException, prelude::*};
 use pyo3_asyncio::tokio;
@@ -18,7 +18,6 @@ pub fn register_py_module(m: &PyModule) -> PyResult<()> {
     m.add_class::<RpcContext>()?;
     m.add_class::<Client>()?;
     m.add_class::<Builder>()?;
-    m.add_class::<RpcOptions>()?;
     m.add_class::<RpcConfig>()?;
     m.add_class::<Mode>()?;
 
@@ -28,7 +27,10 @@ pub fn register_py_module(m: &PyModule) -> PyResult<()> {
 #[pyclass]
 #[derive(Clone, Debug, Default)]
 pub struct RpcContext {
-    rust_ctx: RustRpcContext,
+    #[pyo3(get, set)]
+    database: Option<String>,
+    #[pyo3(get, set)]
+    timeout_ms: Option<u64>,
 }
 
 #[pymethods]
@@ -38,23 +40,17 @@ impl RpcContext {
         Self::default()
     }
 
-    pub fn set_database(&mut self, database: String) {
-        self.rust_ctx.database = Some(database);
-    }
-
-    pub fn set_timeout_in_millis(&mut self, timeout_millis: u64) {
-        let timeout = Duration::from_millis(timeout_millis);
-        self.rust_ctx.timeout = Some(timeout);
-    }
-
     pub fn __str__(&self) -> String {
         format!("{:?}", self)
     }
 }
 
-impl AsRef<RustRpcContext> for RpcContext {
-    fn as_ref(&self) -> &RustRpcContext {
-        &self.rust_ctx
+impl From<RpcContext> for RustRpcContext {
+    fn from(ctx: RpcContext) -> Self {
+        Self {
+            database: ctx.database,
+            timeout: ctx.timeout_ms.map(Duration::from_millis),
+        }
     }
 }
 
@@ -79,9 +75,9 @@ impl Client {
 
         tokio::future_into_py(py, async move {
             let rust_req = req.as_ref();
-            let rust_ctx = ctx.as_ref();
+            let rust_ctx = ctx.into();
             let query_resp = rust_client
-                .sql_query(rust_ctx, rust_req)
+                .sql_query(&rust_ctx, rust_req)
                 .await
                 .map_err(to_py_exception)?;
             Ok(SqlQueryResponse::from(query_resp))
@@ -97,10 +93,10 @@ impl Client {
         let rust_client = self.rust_client.clone();
 
         tokio::future_into_py(py, async move {
-            let rust_ctx = ctx.as_ref();
             let rust_req = req.as_ref();
+            let rust_ctx = ctx.into();
             let rust_resp = rust_client
-                .write(rust_ctx, rust_req)
+                .write(&rust_ctx, rust_req)
                 .await
                 .map_err(to_py_exception)?;
             Ok(WriteResponse::from(rust_resp))
@@ -127,27 +123,20 @@ pub struct RpcConfig {
     pub keep_alive_timeout_ms: u64,
     #[pyo3(get, set)]
     pub keep_alive_while_idle: bool,
+    #[pyo3(get, set)]
+    pub default_write_timeout_ms: u64,
+    #[pyo3(get, set)]
+    pub default_sql_query_timeout_ms: u64,
+    #[pyo3(get, set)]
+    pub connect_timeout_ms: u64,
 }
 
 #[pymethods]
 impl RpcConfig {
     #[new]
-    pub fn new(
-        thread_num: i32,
-        max_send_msg_len: i32,
-        max_recv_msg_len: i32,
-        keep_alive_interval_ms: u64,
-        keep_alive_timeout_ms: u64,
-        keep_alive_while_idle: bool,
-    ) -> Self {
-        Self {
-            thread_num,
-            max_send_msg_len,
-            max_recv_msg_len,
-            keep_alive_interval_ms,
-            keep_alive_timeout_ms,
-            keep_alive_while_idle,
-        }
+    pub fn new() -> Self {
+        let default_rust_config = RustRpcConfig::default();
+        Self::from(default_rust_config)
     }
 }
 
@@ -165,39 +154,26 @@ impl From<RpcConfig> for RustRpcConfig {
             keep_alive_interval: Duration::from_millis(config.keep_alive_interval_ms),
             keep_alive_timeout: Duration::from_millis(config.keep_alive_timeout_ms),
             keep_alive_while_idle: config.keep_alive_while_idle,
+            default_write_timeout: Duration::from_millis(config.default_write_timeout_ms),
+            default_sql_query_timeout: Duration::from_millis(config.default_sql_query_timeout_ms),
+            connect_timeout: Duration::from_millis(config.connect_timeout_ms),
         }
     }
 }
 
-#[pyclass]
-#[derive(Debug, Clone)]
-pub struct RpcOptions {
-    #[pyo3(get, set)]
-    pub write_timeout_ms: u64,
-    #[pyo3(get, set)]
-    pub read_timeout_ms: u64,
-    #[pyo3(get, set)]
-    pub connect_timeout_ms: u64,
-}
-
-#[pymethods]
-impl RpcOptions {
-    #[new]
-    pub fn new(write_timeout_ms: u64, read_timeout_ms: u64, connect_timeout_ms: u64) -> Self {
+impl From<RustRpcConfig> for RpcConfig {
+    fn from(config: RustRpcConfig) -> Self {
+        let thread_num = config.thread_num.unwrap_or(0) as i32;
         Self {
-            write_timeout_ms,
-            read_timeout_ms,
-            connect_timeout_ms,
-        }
-    }
-}
-
-impl From<RpcOptions> for RustRpcOptions {
-    fn from(options: RpcOptions) -> Self {
-        Self {
-            write_timeout: Duration::from_millis(options.write_timeout_ms),
-            read_timeout: Duration::from_millis(options.read_timeout_ms),
-            connect_timeout: Duration::from_millis(options.connect_timeout_ms),
+            thread_num,
+            max_send_msg_len: config.max_send_msg_len,
+            max_recv_msg_len: config.max_recv_msg_len,
+            keep_alive_interval_ms: config.keep_alive_interval.as_millis() as u64,
+            keep_alive_timeout_ms: config.keep_alive_timeout.as_millis() as u64,
+            keep_alive_while_idle: config.keep_alive_while_idle,
+            default_write_timeout_ms: config.default_write_timeout.as_millis() as u64,
+            default_sql_query_timeout_ms: config.default_sql_query_timeout.as_millis() as u64,
+            connect_timeout_ms: config.connect_timeout.as_millis() as u64,
         }
     }
 }
@@ -235,15 +211,7 @@ impl Builder {
     }
 
     pub fn rpc_config(&mut self, conf: RpcConfig) -> Self {
-        let builder = self.rust_builder.take().unwrap().grpc_config(conf.into());
-
-        Self {
-            rust_builder: Some(builder),
-        }
-    }
-
-    pub fn rpc_options(&mut self, opts: RpcOptions) -> Self {
-        let builder = self.rust_builder.take().unwrap().rpc_opts(opts.into());
+        let builder = self.rust_builder.take().unwrap().rpc_config(conf.into());
 
         Self {
             rust_builder: Some(builder),

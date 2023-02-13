@@ -1,7 +1,7 @@
 # Copyright 2022 CeresDB Project Authors. Licensed under Apache-2.0.
 
 import datetime
-from ceresdb_client import Builder, RpcContext, PointBuilder, ValueBuilder, WriteRequest, SqlQueryRequest, Mode
+from ceresdb_client import Builder, RpcContext, PointBuilder, ValueBuilder, WriteRequest, SqlQueryRequest, Mode, RpcConfig
 import asyncio
 
 
@@ -12,7 +12,7 @@ def create_table(ctx):
         t timestamp NOT NULL, \
         TIMESTAMP KEY(t)) ENGINE=Analytic with (enable_ttl=false)'
 
-    req = QueryRequest(['demo'], create_table_sql)
+    req = SqlQueryRequest(['demo'], create_table_sql)
     _resp = sync_query(client, ctx, req)
     print("Create table success!")
 
@@ -20,7 +20,7 @@ def create_table(ctx):
 def drop_table(ctx):
     drop_table_sql = 'DROP TABLE demo'
 
-    req = QueryRequest(['demo'], drop_table_sql)
+    req = SqlQueryRequest(['demo'], drop_table_sql)
     _resp = sync_query(client, ctx, req)
     print("Drop table success!")
 
@@ -62,8 +62,15 @@ def process_write_resp(resp):
 
 
 if __name__ == "__main__":
-    client = Builder("127.0.0.1:8831", Mode.Direct).build()
-    ctx = RpcContext("public", "")
+    rpc_config = RpcConfig()
+    rpc_config.thread_num = 1
+    rpc_config.default_write_timeout_ms = 1000
+    client = Builder("30.54.154.64:8831", Mode.Direct).rpc_config(
+        rpc_config).default_database("public").build()
+
+    ctx = RpcContext()
+    ctx.timeout_ms = 1000
+    ctx.database = "public"
 
     print("------------------------------------------------------------------")
     print("### create table:")

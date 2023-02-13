@@ -97,42 +97,31 @@ class Client:
     def __init__(self, endpoint: str): ...
 
     async def query(self, ctx: RpcContext,
-                    req: QueryRequest) -> QueryResponse: ...
+                    req: SqlQueryRequest) -> SqlQueryResponse: ...
     async def write(self, ctx: RpcContext,
                     req: WriteRequest) -> WriteResponse: ...
 
 
 class RpcConfig:
-    def __init__(
-        self,
-        thread_num: int,
-        max_send_msg_len: int,
-        max_recv_msg_len: int,
-        keepalive_time_ms: int,
-        keepalive_timeout_ms: int,
-    ): ...
+    def __init__(self): ...
     thread_num: int
     max_send_msg_len: int
     max_recv_msg_len: int
     keepalive_time_ms: int
     keepalive_timeout_ms: int
+    default_write_timeout_ms: int
+    default_sql_query_timeout_ms: int
+    connect_timeout_ms: int
 
 
 class RpcContext:
     def __init__(self): ...
-    def set_timeout_in_millis(self, timeout_millis: int): ...
-    def set_database(self, database: str): ...
-
-
-class RpcOptions:
-    def __init__(self, write_timeout_ms: int, read_timeout_ms: int): ...
-    write_timeout_ms: int
-    read_timeout_ms: int
+    timeout_ms: int
+    database: str
 
 
 class Builder:
     def __init__(self, endpoint: str): ...
     def rpc_config(self, conf: RpcConfig) -> Builder: ...
-    def rpc_options(self, opts: RpcOptions) -> Builder: ...
     def default_database(self, db: str) -> Builder: ...
     def build(self) -> Client: ...
