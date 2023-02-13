@@ -70,25 +70,6 @@ fn to_py_exception(err: impl Debug) -> PyErr {
 
 #[pymethods]
 impl Client {
-    fn query<'p>(
-        &self,
-        py: Python<'p>,
-        ctx: RpcContext,
-        req: model::SqlQueryRequest,
-    ) -> PyResult<&'p PyAny> {
-        let rust_client = self.rust_client.clone();
-
-        tokio::future_into_py(py, async move {
-            let rust_req = req.as_ref();
-            let rust_ctx = ctx.into();
-            let query_resp = rust_client
-                .sql_query(&rust_ctx, rust_req)
-                .await
-                .map_err(to_py_exception)?;
-            Ok(SqlQueryResponse::from(query_resp))
-        })
-    }
-
     fn write<'p>(
         &self,
         py: Python<'p>,
@@ -105,6 +86,25 @@ impl Client {
                 .await
                 .map_err(to_py_exception)?;
             Ok(WriteResponse::from(rust_resp))
+        })
+    }
+
+    fn sql_query<'p>(
+        &self,
+        py: Python<'p>,
+        ctx: RpcContext,
+        req: model::SqlQueryRequest,
+    ) -> PyResult<&'p PyAny> {
+        let rust_client = self.rust_client.clone();
+
+        tokio::future_into_py(py, async move {
+            let rust_req = req.as_ref();
+            let rust_ctx = ctx.into();
+            let query_resp = rust_client
+                .sql_query(&rust_ctx, rust_req)
+                .await
+                .map_err(to_py_exception)?;
+            Ok(SqlQueryResponse::from(query_resp))
         })
     }
 }
