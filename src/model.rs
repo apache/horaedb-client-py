@@ -33,6 +33,7 @@ pub fn register_py_module(m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
+/// A sql query request.
 #[pyclass]
 #[derive(Clone, Debug)]
 pub struct SqlQueryRequest {
@@ -64,6 +65,47 @@ impl AsRef<RustSqlQueryRequest> for SqlQueryRequest {
     }
 }
 
+/// [SqlQueryResponse] is the response of a sql query.
+#[pyclass]
+#[derive(Clone, Debug)]
+pub struct SqlQueryResponse {
+    rust_rows: Arc<Vec<RustRow>>,
+    #[pyo3(get)]
+    affected_rows: u32,
+}
+
+#[pymethods]
+impl SqlQueryResponse {
+    pub fn row_num(&self) -> usize {
+        self.rust_rows.len()
+    }
+
+    pub fn get_row(&self, row_idx: usize) -> Option<Row> {
+        if self.rust_rows.len() > row_idx {
+            Some(Row {
+                rust_rows: self.rust_rows.clone(),
+                row_idx,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn __str__(&self) -> String {
+        format!("{:?}", self)
+    }
+}
+
+impl From<RustSqlQueryResponse> for SqlQueryResponse {
+    fn from(query_resp: RustSqlQueryResponse) -> Self {
+        SqlQueryResponse {
+            rust_rows: Arc::new(query_resp.rows),
+            affected_rows: query_resp.affected_rows,
+        }
+    }
+}
+
+/// The data type definitions for read/write protocol.
 #[pyclass]
 #[derive(Clone, Copy, Debug)]
 pub enum DataType {
@@ -106,6 +148,7 @@ impl From<RustDataType> for DataType {
     }
 }
 
+/// A column of data returned from a sql query.
 #[pyclass]
 #[derive(Clone, Debug)]
 pub struct Column {
@@ -155,6 +198,7 @@ impl Column {
     }
 }
 
+/// A row of data returned from a sql query.
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct Row {
@@ -210,52 +254,14 @@ impl Row {
     }
 }
 
-#[pyclass]
-#[derive(Clone, Debug)]
-pub struct SqlQueryResponse {
-    rust_rows: Arc<Vec<RustRow>>,
-    #[pyo3(get)]
-    affected_rows: u32,
-}
-
-#[pymethods]
-impl SqlQueryResponse {
-    pub fn row_num(&self) -> usize {
-        self.rust_rows.len()
-    }
-
-    pub fn get_row(&self, row_idx: usize) -> Option<Row> {
-        if self.rust_rows.len() > row_idx {
-            Some(Row {
-                rust_rows: self.rust_rows.clone(),
-                row_idx,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn __str__(&self) -> String {
-        format!("{:?}", self)
-    }
-}
-
-impl From<RustSqlQueryResponse> for SqlQueryResponse {
-    fn from(query_resp: RustSqlQueryResponse) -> Self {
-        SqlQueryResponse {
-            rust_rows: Arc::new(query_resp.rows),
-            affected_rows: query_resp.affected_rows,
-        }
-    }
-}
-
-/// Value in local, define to avoid using the one in ceresdb.
+/// [Value] is a wrapper of [RustValue], used for writing.
 #[pyclass]
 #[derive(Clone, Debug)]
 pub struct Value {
     raw_val: RustValue,
 }
 
+/// Builder for a [Value].
 #[pyclass]
 #[derive(Clone, Debug, Default)]
 pub struct ValueBuilder;
@@ -364,13 +370,14 @@ impl From<Value> for RustValue {
     }
 }
 
-/// Point represents one data row needed to write.
+/// [Point] represents one data row needed to write.
 #[pyclass]
 #[derive(Clone, Debug)]
 pub struct Point {
     rust_point: RustPoint,
 }
 
+/// The builder for [Point].
 #[pyclass]
 pub struct PointBuilder {
     /// The underlying builder defined in rust.

@@ -24,6 +24,8 @@ pub fn register_py_module(m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
+/// The context used for a specific rpc call, and it will overwrite the default
+/// options.
 #[pyclass]
 #[derive(Clone, Debug, Default)]
 pub struct RpcContext {
@@ -54,6 +56,9 @@ impl From<RpcContext> for RustRpcContext {
     }
 }
 
+/// The client for CeresDB.
+///
+/// It is just a wrapper on the rust client, and it is thread-safe.
 #[pyclass]
 pub struct Client {
     rust_client: Arc<dyn DbClient>,
@@ -178,6 +183,7 @@ impl From<RustRpcConfig> for RpcConfig {
     }
 }
 
+/// A builder for the client.
 #[pyclass]
 pub struct Builder {
     /// The builder is used to build the client.
@@ -187,6 +193,12 @@ pub struct Builder {
     rust_builder: Option<RustBuilder>,
 }
 
+/// The mode of the communication between client and server.
+///
+/// In `Direct` mode, request will be sent to corresponding endpoint
+/// directly(maybe need to get the target endpoint by route request first).
+/// In `Proxy` mode, request will be sent to proxy server responsible for
+/// forwarding the request.
 #[pyclass]
 #[derive(Debug, Clone)]
 pub enum Mode {

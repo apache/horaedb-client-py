@@ -65,8 +65,10 @@ if __name__ == "__main__":
     rpc_config = RpcConfig()
     rpc_config.thread_num = 1
     rpc_config.default_write_timeout_ms = 1000
-    client = Builder("30.54.154.64:8831", Mode.Direct).rpc_config(
-        rpc_config).default_database("public").build()
+    client = Builder("30.54.154.64:8831", Mode.Direct) \
+        .rpc_config(rpc_config) \
+        .default_database("public") \
+        .build()
 
     ctx = RpcContext()
     ctx.timeout_ms = 1000
