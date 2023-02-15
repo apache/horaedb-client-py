@@ -26,7 +26,7 @@ def drop_table(ctx):
 
 
 async def async_query(cli, ctx, req):
-    return await cli.query(ctx, req)
+    return await cli.sql_query(ctx, req)
 
 
 def sync_query(cli, ctx, req):
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     rpc_config = RpcConfig()
     rpc_config.thread_num = 1
     rpc_config.default_write_timeout_ms = 1000
-    builder = Builder("30.54.154.64:8831", Mode.Direct)
+    builder = Builder("127.0.0.1:8831", Mode.Direct)
     builder.set_rpc_config(rpc_config)
     builder.set_default_database("public")
     client = builder.build()
