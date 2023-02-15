@@ -396,32 +396,24 @@ impl PointBuilder {
         }
     }
 
-    pub fn table(&mut self, table: String) -> Self {
+    pub fn set_table(&mut self, table: String) {
         let builder = self.rust_builder.take().unwrap().table(table);
-        Self {
-            rust_builder: Some(builder),
-        }
+        self.rust_builder = Some(builder);
     }
 
-    pub fn timestamp(&mut self, timestamp: TimestampMs) -> Self {
+    pub fn set_timestamp(&mut self, timestamp: TimestampMs) {
         let builder = self.rust_builder.take().unwrap().timestamp(timestamp);
-        Self {
-            rust_builder: Some(builder),
-        }
+        self.rust_builder = Some(builder);
     }
 
-    pub fn tag(&mut self, name: String, val: Value) -> Self {
+    pub fn set_tag(&mut self, name: String, val: Value) {
         let builder = self.rust_builder.take().unwrap().tag(name, val.raw_val);
-        Self {
-            rust_builder: Some(builder),
-        }
+        self.rust_builder = Some(builder);
     }
 
-    pub fn field(&mut self, name: String, val: Value) -> Self {
+    pub fn set_field(&mut self, name: String, val: Value) {
         let builder = self.rust_builder.take().unwrap().field(name, val.raw_val);
-        Self {
-            rust_builder: Some(builder),
-        }
+        self.rust_builder = Some(builder);
     }
 
     pub fn build(&mut self) -> PyResult<Point> {

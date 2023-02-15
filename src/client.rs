@@ -194,8 +194,8 @@ impl From<RustRpcConfig> for RpcConfig {
 pub struct Builder {
     /// The builder is used to build the client.
     ///
-    /// The option is a workaround for using builder pattern, and it is ensured
-    /// to be `Some`.
+    /// The option is a workaround for using builder pattern of [`RustBuilder`],
+    /// and it is ensured to be `Some`.
     rust_builder: Option<RustBuilder>,
 }
 
@@ -228,20 +228,14 @@ impl Builder {
         }
     }
 
-    pub fn rpc_config(&mut self, conf: RpcConfig) -> Self {
+    pub fn set_rpc_config(&mut self, conf: RpcConfig) {
         let builder = self.rust_builder.take().unwrap().rpc_config(conf.into());
-
-        Self {
-            rust_builder: Some(builder),
-        }
+        self.rust_builder = Some(builder);
     }
 
-    pub fn default_database(&mut self, db: String) -> Self {
+    pub fn set_default_database(&mut self, db: String) {
         let builder = self.rust_builder.take().unwrap().default_database(db);
-
-        Self {
-            rust_builder: Some(builder),
-        }
+        self.rust_builder = Some(builder);
     }
 
     pub fn build(&mut self) -> Client {

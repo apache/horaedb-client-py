@@ -65,10 +65,10 @@ if __name__ == "__main__":
     rpc_config = RpcConfig()
     rpc_config.thread_num = 1
     rpc_config.default_write_timeout_ms = 1000
-    client = Builder("30.54.154.64:8831", Mode.Direct) \
-        .rpc_config(rpc_config) \
-        .default_database("public") \
-        .build()
+    builder = Builder("30.54.154.64:8831", Mode.Direct)
+    builder.set_rpc_config(rpc_config)
+    builder.set_default_database("public")
+    client = builder.build()
 
     ctx = RpcContext()
     ctx.timeout_ms = 1000
@@ -81,11 +81,12 @@ if __name__ == "__main__":
 
     print("### write:")
     point_builder = PointBuilder('demo')
-    point = point_builder \
-        .timestamp(int(round(datetime.datetime.now().timestamp()))) \
-        .tag("name", ValueBuilder().string("test_tag1")) \
-        .field("value", ValueBuilder().double(0.4242)) \
-        .build()
+    point_builder.set_timestamp(
+        int(round(datetime.datetime.now().timestamp())))
+    point_builder.set_tag("name", ValueBuilder().string("test_tag1"))
+    point_builder.set_field("value", ValueBuilder().double(0.4242))
+    point = point_builder.build()
+
     write_request = WriteRequest()
     write_request.add_point(point)
     resp = sync_write(client, ctx, write_request)
