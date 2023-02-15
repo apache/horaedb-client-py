@@ -1,7 +1,7 @@
 SHELL = /bin/bash
 
 install-deps:
-	pip install maturin
+	pip3 install maturin
 
 build:
 	maturin build --release

@@ -4,42 +4,42 @@ use std::{fmt::Debug, sync::Arc, time::Duration};
 
 use ceresdb_client_rs::{
     db_client::{Builder as RustBuilder, DbClient, Mode as RustMode},
-    model as rust_model, RpcConfig as RustRpcConfig, RpcContext as RustRpcContext,
-    RpcOptions as RustRpcOptions,
+    RpcConfig as RustRpcConfig, RpcContext as RustRpcContext,
 };
 use pyo3::{exceptions::PyException, prelude::*};
 use pyo3_asyncio::tokio;
 
-use crate::{model, model::WriteResponse};
+use crate::{
+    model,
+    model::{SqlQueryResponse, WriteResponse},
+};
 
 pub fn register_py_module(m: &PyModule) -> PyResult<()> {
     m.add_class::<RpcContext>()?;
     m.add_class::<Client>()?;
     m.add_class::<Builder>()?;
-    m.add_class::<RpcOptions>()?;
-    m.add_class::<GrpcConfig>()?;
+    m.add_class::<RpcConfig>()?;
     m.add_class::<Mode>()?;
 
     Ok(())
 }
 
+/// The context used for a specific rpc call, and it will overwrite the default
+/// options.
 #[pyclass]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct RpcContext {
-    pub raw_ctx: RustRpcContext,
+    #[pyo3(get, set)]
+    database: Option<String>,
+    #[pyo3(get, set)]
+    timeout_ms: Option<u64>,
 }
 
 #[pymethods]
 impl RpcContext {
     #[new]
-    pub fn new(tenant: String, token: String) -> Self {
-        let raw_ctx = RustRpcContext::new(tenant, token);
-        Self { raw_ctx }
-    }
-
-    pub fn set_timeout_in_millis(&mut self, timeout_millis: u64) {
-        let timeout = Duration::from_millis(timeout_millis);
-        self.raw_ctx.timeout = Some(timeout);
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn __str__(&self) -> String {
@@ -47,9 +47,21 @@ impl RpcContext {
     }
 }
 
+impl From<RpcContext> for RustRpcContext {
+    fn from(ctx: RpcContext) -> Self {
+        Self {
+            database: ctx.database,
+            timeout: ctx.timeout_ms.map(Duration::from_millis),
+        }
+    }
+}
+
+/// The client for CeresDB.
+///
+/// It is just a wrapper on the rust client, and it is thread-safe.
 #[pyclass]
 pub struct Client {
-    raw_client: Arc<dyn DbClient>,
+    rust_client: Arc<dyn DbClient>,
 }
 
 fn to_py_exception(err: impl Debug) -> PyErr {
@@ -58,53 +70,48 @@ fn to_py_exception(err: impl Debug) -> PyErr {
 
 #[pymethods]
 impl Client {
-    fn query<'p>(
-        &self,
-        py: Python<'p>,
-        ctx: &RpcContext,
-        req: &model::QueryRequest,
-    ) -> PyResult<&'p PyAny> {
-        // TODO(kamille) can avoid cloning?
-        let raw_req = rust_model::request::QueryRequest {
-            metrics: req.metrics.clone(),
-            ql: req.ql.clone(),
-        };
-
-        let raw_client = self.raw_client.clone();
-        let raw_ctx = ctx.raw_ctx.clone();
-        tokio::future_into_py(py, async move {
-            let query_resp = raw_client
-                .query(&raw_ctx, &raw_req)
-                .await
-                .map_err(to_py_exception)?;
-            model::convert_query_response(query_resp).map_err(to_py_exception)
-        })
-    }
-
     fn write<'p>(
         &self,
         py: Python<'p>,
-        ctx: &RpcContext,
-        req: &model::WriteRequest,
+        ctx: RpcContext,
+        req: model::WriteRequest,
     ) -> PyResult<&'p PyAny> {
-        let raw_client = self.raw_client.clone();
-        let raw_ctx = ctx.raw_ctx.clone();
-        let raw_req: rust_model::write::WriteRequest = (*req).clone().into();
+        let rust_client = self.rust_client.clone();
+
         tokio::future_into_py(py, async move {
-            let rust_resp = raw_client
-                .write(&raw_ctx, &raw_req)
+            let rust_req = req.as_ref();
+            let rust_ctx = ctx.into();
+            let rust_resp = rust_client
+                .write(&rust_ctx, rust_req)
                 .await
                 .map_err(to_py_exception)?;
-            Ok(WriteResponse {
-                raw_resp: Arc::new(rust_resp),
-            })
+            Ok(WriteResponse::from(rust_resp))
+        })
+    }
+
+    fn sql_query<'p>(
+        &self,
+        py: Python<'p>,
+        ctx: RpcContext,
+        req: model::SqlQueryRequest,
+    ) -> PyResult<&'p PyAny> {
+        let rust_client = self.rust_client.clone();
+
+        tokio::future_into_py(py, async move {
+            let rust_req = req.as_ref();
+            let rust_ctx = ctx.into();
+            let query_resp = rust_client
+                .sql_query(&rust_ctx, rust_req)
+                .await
+                .map_err(to_py_exception)?;
+            Ok(SqlQueryResponse::from(query_resp))
         })
     }
 }
 
 #[pyclass]
 #[derive(Debug, Clone)]
-pub struct GrpcConfig {
+pub struct RpcConfig {
     /// Set the thread num as the cpu cores number if the number is not
     /// positive.
     #[pyo3(get, set)]
@@ -121,109 +128,120 @@ pub struct GrpcConfig {
     pub keep_alive_timeout_ms: u64,
     #[pyo3(get, set)]
     pub keep_alive_while_idle: bool,
-}
-
-#[pymethods]
-impl GrpcConfig {
-    #[new]
-    pub fn new(
-        thread_num: i32,
-        max_send_msg_len: i32,
-        max_recv_msg_len: i32,
-        keep_alive_interval_ms: u64,
-        keep_alive_timeout_ms: u64,
-        keep_alive_while_idle: bool,
-    ) -> Self {
-        Self {
-            thread_num,
-            max_send_msg_len,
-            max_recv_msg_len,
-            keep_alive_interval_ms,
-            keep_alive_timeout_ms,
-            keep_alive_while_idle,
-        }
-    }
-}
-
-#[pyclass]
-#[derive(Debug, Clone)]
-pub struct RpcOptions {
     #[pyo3(get, set)]
-    pub write_timeout_ms: u64,
+    pub default_write_timeout_ms: u64,
     #[pyo3(get, set)]
-    pub read_timeout_ms: u64,
+    pub default_sql_query_timeout_ms: u64,
     #[pyo3(get, set)]
     pub connect_timeout_ms: u64,
 }
 
 #[pymethods]
-impl RpcOptions {
+impl RpcConfig {
     #[new]
-    pub fn new(write_timeout_ms: u64, read_timeout_ms: u64, connect_timeout_ms: u64) -> Self {
+    pub fn new() -> Self {
+        let default_rust_config = RustRpcConfig::default();
+        Self::from(default_rust_config)
+    }
+}
+
+impl Default for RpcConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl From<RpcConfig> for RustRpcConfig {
+    fn from(config: RpcConfig) -> Self {
+        let thread_num = if config.thread_num > 0 {
+            Some(config.thread_num as usize)
+        } else {
+            None
+        };
         Self {
-            write_timeout_ms,
-            read_timeout_ms,
-            connect_timeout_ms,
+            thread_num,
+            max_send_msg_len: config.max_send_msg_len,
+            max_recv_msg_len: config.max_recv_msg_len,
+            keep_alive_interval: Duration::from_millis(config.keep_alive_interval_ms),
+            keep_alive_timeout: Duration::from_millis(config.keep_alive_timeout_ms),
+            keep_alive_while_idle: config.keep_alive_while_idle,
+            default_write_timeout: Duration::from_millis(config.default_write_timeout_ms),
+            default_sql_query_timeout: Duration::from_millis(config.default_sql_query_timeout_ms),
+            connect_timeout: Duration::from_millis(config.connect_timeout_ms),
         }
     }
 }
 
-#[pyclass]
-pub struct Builder {
-    raw_builder: RustBuilder,
+impl From<RustRpcConfig> for RpcConfig {
+    fn from(config: RustRpcConfig) -> Self {
+        let thread_num = config.thread_num.unwrap_or(0) as i32;
+        Self {
+            thread_num,
+            max_send_msg_len: config.max_send_msg_len,
+            max_recv_msg_len: config.max_recv_msg_len,
+            keep_alive_interval_ms: config.keep_alive_interval.as_millis() as u64,
+            keep_alive_timeout_ms: config.keep_alive_timeout.as_millis() as u64,
+            keep_alive_while_idle: config.keep_alive_while_idle,
+            default_write_timeout_ms: config.default_write_timeout.as_millis() as u64,
+            default_sql_query_timeout_ms: config.default_sql_query_timeout.as_millis() as u64,
+            connect_timeout_ms: config.connect_timeout.as_millis() as u64,
+        }
+    }
 }
 
+/// A builder for the client.
+#[pyclass]
+pub struct Builder {
+    /// The builder is used to build the client.
+    ///
+    /// The option is a workaround for using builder pattern of [`RustBuilder`],
+    /// and it is ensured to be `Some`.
+    rust_builder: Option<RustBuilder>,
+}
+
+/// The mode of the communication between client and server.
+///
+/// In `Direct` mode, request will be sent to corresponding endpoint
+/// directly(maybe need to get the target endpoint by route request first).
+/// In `Proxy` mode, request will be sent to proxy server responsible for
+/// forwarding the request.
 #[pyclass]
 #[derive(Debug, Clone)]
 pub enum Mode {
-    Standalone,
-    Cluster,
+    Direct,
+    Proxy,
 }
 
 #[pymethods]
 impl Builder {
     #[new]
-    pub fn new(endpoint: String, mode: Mode) -> PyResult<Self> {
+    pub fn new(endpoint: String, mode: Mode) -> Self {
         let rust_mode = match mode {
-            Mode::Standalone => RustMode::Standalone,
-            Mode::Cluster => RustMode::Cluster,
+            Mode::Direct => RustMode::Direct,
+            Mode::Proxy => RustMode::Proxy,
         };
 
         let builder = RustBuilder::new(endpoint, rust_mode);
 
-        Ok(Self {
-            raw_builder: builder,
-        })
+        Self {
+            rust_builder: Some(builder),
+        }
     }
 
-    pub fn set_grpc_config(&mut self, conf: GrpcConfig) {
-        let thread_num = if conf.thread_num > 0 {
-            Some(conf.thread_num as usize)
-        } else {
-            None
-        };
-        let raw_grpc_config = RustRpcConfig {
-            thread_num,
-            max_send_msg_len: conf.max_send_msg_len,
-            max_recv_msg_len: conf.max_recv_msg_len,
-            keep_alive_interval: Duration::from_millis(conf.keep_alive_interval_ms),
-            keep_alive_timeout: Duration::from_millis(conf.keep_alive_timeout_ms),
-            keep_alive_while_idle: conf.keep_alive_while_idle,
-        };
-        self.raw_builder = self.raw_builder.clone().grpc_config(raw_grpc_config);
+    pub fn set_rpc_config(&mut self, conf: RpcConfig) {
+        let builder = self.rust_builder.take().unwrap().rpc_config(conf.into());
+        self.rust_builder = Some(builder);
     }
 
-    pub fn set_rpc_options(&mut self, opts: RpcOptions) {
-        let raw_rpc_options = RustRpcOptions {
-            write_timeout: Duration::from_millis(opts.write_timeout_ms),
-            read_timeout: Duration::from_millis(opts.read_timeout_ms),
-            connect_timeout: Duration::from_millis(opts.read_timeout_ms),
-        };
-        self.raw_builder = self.raw_builder.clone().rpc_opts(raw_rpc_options);
+    pub fn set_default_database(&mut self, db: String) {
+        let builder = self.rust_builder.take().unwrap().default_database(db);
+        self.rust_builder = Some(builder);
     }
 
-    pub fn build(&self) -> Client {
-        let client = self.raw_builder.clone().build();
-        Client { raw_client: client }
+    pub fn build(&mut self) -> Client {
+        let client = self.rust_builder.take().unwrap().build();
+        Client {
+            rust_client: client,
+        }
     }
 }
