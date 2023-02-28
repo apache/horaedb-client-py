@@ -19,8 +19,5 @@ rev = "f41c4006789220ef88c8721c400d8cf060fe1615"
 crate-type = ["cdylib"]
 name = "ceresdb_client"
 
-[patch.crates-io]
-cmake = { git = "https://github.com/messense/cmake-rs.git", branch = "cross-compile" }
-
 [build-dependencies]
 cc = "1.0.73"
