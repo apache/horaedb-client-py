@@ -4,7 +4,7 @@
 
 use std::sync::Arc;
 
-use ceresdb_client_rs::model::{
+use ceresdb_client::model::{
     sql_query::{
         row::{Column as RustColumn, Row as RustRow},
         Request as RustSqlQueryRequest, Response as RustSqlQueryResponse,
