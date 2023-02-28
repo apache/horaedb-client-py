@@ -49,7 +49,7 @@ impl SqlQueryRequest {
     }
 
     pub fn __str__(&self) -> String {
-        format!("{:?}", self)
+        format!("{self:?}")
     }
 }
 
@@ -92,7 +92,7 @@ impl SqlQueryResponse {
     }
 
     pub fn __str__(&self) -> String {
-        format!("{:?}", self)
+        format!("{self:?}")
     }
 }
 
@@ -194,7 +194,7 @@ impl Column {
     }
 
     pub fn __str__(&self) -> String {
-        format!("{:?}", self)
+        format!("{self:?}")
     }
 }
 
@@ -238,10 +238,7 @@ impl Row {
             };
             Ok(col)
         } else {
-            Err(PyTypeError::new_err(format!(
-                "Column:{} not found",
-                col_name,
-            )))
+            Err(PyTypeError::new_err(format!("Column:{col_name} not found")))
         }
     }
 
@@ -250,7 +247,7 @@ impl Row {
     }
 
     pub fn __str__(&self) -> String {
-        format!("{:?}", self)
+        format!("{self:?}")
     }
 }
 
@@ -453,7 +450,7 @@ impl WriteRequest {
     }
 
     pub fn __str__(&self) -> PyResult<String> {
-        Ok(format!("{:?}", self))
+        Ok(format!("{self:?}"))
     }
 }
 
@@ -486,7 +483,7 @@ impl WriteResponse {
     }
 
     pub fn __str__(&self) -> PyResult<String> {
-        Ok(format!("{:?}", self))
+        Ok(format!("{self:?}"))
     }
 }
 
