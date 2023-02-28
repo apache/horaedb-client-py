@@ -1,6 +1,6 @@
 [project]
 name = "ceresdb-client"
-version = "0.1.4"
+version = "1.0.0"
 description = "The python client for ceresdb."
 readme = "README.md"
 requires-python = ">=3.7"

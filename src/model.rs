@@ -166,7 +166,7 @@ impl Column {
 #[pymethods]
 impl Column {
     pub fn value(&self, py: Python<'_>) -> PyObject {
-        match &self.get_rust_col().value {
+        match self.get_rust_col().value() {
             RustValue::Null => py.None(),
             RustValue::Timestamp(v) => (*v).to_object(py),
             RustValue::Double(v) => (*v).to_object(py),
@@ -186,11 +186,11 @@ impl Column {
     }
 
     pub fn data_type(&self) -> DataType {
-        self.get_rust_col().value.data_type().into()
+        self.get_rust_col().value().data_type().into()
     }
 
     pub fn name(&self) -> &str {
-        &self.get_rust_col().name
+        self.get_rust_col().name()
     }
 
     pub fn __str__(&self) -> String {
@@ -229,7 +229,7 @@ impl Row {
 
     pub fn column_by_name(&self, col_name: &str) -> PyResult<Column> {
         let row = &self.rust_rows[self.row_idx];
-        let col_idx = row.columns().iter().position(|c| c.name == col_name);
+        let col_idx = row.columns().iter().position(|c| c.name() == col_name);
         if let Some(col_idx) = col_idx {
             let col = Column {
                 row_idx: self.row_idx,
