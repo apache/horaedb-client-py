@@ -318,14 +318,12 @@ impl Row {
         self.rust_rows[self.row_idx].columns().len()
     }
 
-    pub fn __iter__(slf: PyRef<Self>) -> PyResult<Py<ColumnIter>> {
-        let iter = ColumnIter {
-            rust_rows: slf.rust_rows.clone(),
-            row_idx: slf.row_idx,
+    pub fn iter_columns(&self) -> ColumnIter {
+        ColumnIter {
+            rust_rows: self.rust_rows.clone(),
+            row_idx: self.row_idx,
             next_col_idx: 0,
-        };
-
-        Py::new(slf.py(), iter)
+        }
     }
 
     pub fn __str__(&self) -> String {

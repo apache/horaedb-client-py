@@ -49,7 +49,7 @@ def process_query_resp(resp):
     print(f"Access row by iter in the resp:")
     for row in resp.iter_rows():
         row_tokens = []
-        for col in row:
+        for col in row.iter_columns():
             row_tokens.append(f"{col.name()}:{col.value()}#{col.data_type()}")
         print(f"row: {','.join(row_tokens)}")
 
