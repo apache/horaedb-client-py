@@ -37,14 +37,21 @@ def sync_query(cli, ctx, req):
 def process_query_resp(resp):
     print(f"Raw resp is:\n{resp}\n")
 
-    print(f"Rows in the resp:")
-    for row_idx in range(0, resp.row_num()):
+    print(f"Access row by index in the resp:")
+    for row_idx in range(0, resp.num_rows()):
         row_tokens = []
-        row = resp.get_row(row_idx)
+        row = resp.row_by_idx(row_idx)
         for col_idx in range(0, row.num_cols()):
             col = row.column_by_idx(col_idx)
             row_tokens.append(f"{col.name()}:{col.value()}#{col.data_type()}")
         print(f"row#{col_idx}: {','.join(row_tokens)}")
+
+    print(f"Access row by iter in the resp:")
+    for row in resp.iter_rows():
+        row_tokens = []
+        for col in row:
+            row_tokens.append(f"{col.name()}:{col.value()}#{col.data_type()}")
+        print(f"row: {','.join(row_tokens)}")
 
 
 async def async_write(cli, ctx, req):

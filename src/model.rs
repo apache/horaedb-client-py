@@ -22,7 +22,9 @@ pub fn register_py_module(m: &PyModule) -> PyResult<()> {
     m.add_class::<SqlQueryResponse>()?;
     m.add_class::<DataType>()?;
     m.add_class::<Column>()?;
+    m.add_class::<ColumnIter>()?;
     m.add_class::<Row>()?;
+    m.add_class::<RowIter>()?;
     m.add_class::<Value>()?;
     m.add_class::<ValueBuilder>()?;
     m.add_class::<PointBuilder>()?;
@@ -76,11 +78,11 @@ pub struct SqlQueryResponse {
 
 #[pymethods]
 impl SqlQueryResponse {
-    pub fn row_num(&self) -> usize {
+    pub fn num_rows(&self) -> usize {
         self.rust_rows.len()
     }
 
-    pub fn get_row(&self, row_idx: usize) -> Option<Row> {
+    pub fn row_by_idx(&self, row_idx: usize) -> Option<Row> {
         if self.rust_rows.len() > row_idx {
             Some(Row {
                 rust_rows: self.rust_rows.clone(),
@@ -91,8 +93,50 @@ impl SqlQueryResponse {
         }
     }
 
+    pub fn iter_rows(&self) -> RowIter {
+        RowIter {
+            rust_rows: self.rust_rows.clone(),
+            next_row_idx: 0,
+        }
+    }
+
     pub fn __str__(&self) -> String {
         format!("{self:?}")
+    }
+}
+
+#[pyclass]
+#[derive(Clone)]
+pub struct RowIter {
+    rust_rows: Arc<Vec<RustRow>>,
+    next_row_idx: usize,
+}
+
+#[pymethods]
+impl RowIter {
+    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+
+    fn __next__(mut slf: PyRefMut<'_, Self>) -> Option<Row> {
+        if slf.rust_rows.len() > slf.next_row_idx {
+            let row_idx = slf.next_row_idx;
+            slf.next_row_idx += 1;
+            Some(Row {
+                rust_rows: slf.rust_rows.clone(),
+                row_idx,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn __str__(&self) -> String {
+        format!(
+            "total_rows:{}, next_row_idx:{}",
+            self.rust_rows.len(),
+            self.next_row_idx
+        )
     }
 }
 
@@ -194,7 +238,39 @@ impl Column {
     }
 
     pub fn __str__(&self) -> String {
-        format!("{self:?}")
+        let rust_col = self.get_rust_col();
+        format!("{rust_col:?}")
+    }
+}
+
+#[pyclass]
+#[derive(Clone)]
+pub struct ColumnIter {
+    rust_rows: Arc<Vec<RustRow>>,
+    row_idx: usize,
+    next_col_idx: usize,
+}
+
+#[pymethods]
+impl ColumnIter {
+    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+
+    fn __next__(mut slf: PyRefMut<'_, Self>) -> Option<Column> {
+        // The row idx should be ensured in range.
+        let rust_row = &slf.rust_rows[slf.row_idx];
+        if slf.next_col_idx < rust_row.columns().len() {
+            let col_idx = slf.next_col_idx;
+            slf.next_col_idx += 1;
+            Some(Column {
+                rust_rows: slf.rust_rows.clone(),
+                row_idx: slf.row_idx,
+                col_idx,
+            })
+        } else {
+            None
+        }
     }
 }
 
@@ -208,26 +284,7 @@ pub struct Row {
 
 #[pymethods]
 impl Row {
-    pub fn column_by_idx(&self, col_idx: usize) -> PyResult<Column> {
-        let row = &self.rust_rows[self.row_idx];
-
-        if col_idx >= row.columns().len() {
-            Err(PyTypeError::new_err(format!(
-                "invalid column idx:{}, total columns:{}",
-                col_idx,
-                row.columns().len()
-            )))
-        } else {
-            let col = Column {
-                row_idx: self.row_idx,
-                col_idx,
-                rust_rows: self.rust_rows.clone(),
-            };
-            Ok(col)
-        }
-    }
-
-    pub fn column_by_name(&self, col_name: &str) -> PyResult<Column> {
+    pub fn column(&self, col_name: &str) -> Option<Column> {
         let row = &self.rust_rows[self.row_idx];
         let col_idx = row.columns().iter().position(|c| c.name() == col_name);
         if let Some(col_idx) = col_idx {
@@ -236,9 +293,34 @@ impl Row {
                 col_idx,
                 rust_rows: self.rust_rows.clone(),
             };
-            Ok(col)
+            Some(col)
         } else {
-            Err(PyTypeError::new_err(format!("Column:{col_name} not found")))
+            None
+        }
+    }
+
+    pub fn __iter__(slf: PyRef<Self>) -> PyResult<Py<ColumnIter>> {
+        let iter = ColumnIter {
+            rust_rows: slf.rust_rows.clone(),
+            row_idx: slf.row_idx,
+            next_col_idx: 0,
+        };
+
+        Py::new(slf.py(), iter)
+    }
+
+    pub fn column_by_idx(&self, col_idx: usize) -> Option<Column> {
+        let row = &self.rust_rows[self.row_idx];
+
+        if col_idx >= row.columns().len() {
+            None
+        } else {
+            let col = Column {
+                row_idx: self.row_idx,
+                col_idx,
+                rust_rows: self.rust_rows.clone(),
+            };
+            Some(col)
         }
     }
 
