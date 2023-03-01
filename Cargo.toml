@@ -1,19 +1,14 @@
 [package]
 name = "ceresdb-client-py"
-version = "0.1.4"
+version = "1.0.0"
 authors = ["CeresDB Authors <ceresdbservice@gmail.com>"]
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+ceresdb-client = "1.0"
 pyo3 = { version = "0.16", features = ["extension-module", "abi3-py37"] }
 pyo3-asyncio = { version = "0.16", features = ["attributes", "tokio-runtime"] }
 tokio = { version = "1", features = ["sync"] }
-
-[dependencies.ceresdb-client-rs]
-git = "https://github.com/CeresDB/ceresdb-client-rs.git"
-rev = "b9efb90e06c99f59e8580a8f8f56badd81b88aa2"
 
 [lib]
 crate-type = ["cdylib"]

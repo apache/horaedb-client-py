@@ -4,7 +4,7 @@
 
 use std::sync::Arc;
 
-use ceresdb_client_rs::model::{
+use ceresdb_client::model::{
     sql_query::{
         row::{Column as RustColumn, Row as RustRow},
         Request as RustSqlQueryRequest, Response as RustSqlQueryResponse,
@@ -22,7 +22,9 @@ pub fn register_py_module(m: &PyModule) -> PyResult<()> {
     m.add_class::<SqlQueryResponse>()?;
     m.add_class::<DataType>()?;
     m.add_class::<Column>()?;
+    m.add_class::<ColumnIter>()?;
     m.add_class::<Row>()?;
+    m.add_class::<RowIter>()?;
     m.add_class::<Value>()?;
     m.add_class::<ValueBuilder>()?;
     m.add_class::<PointBuilder>()?;
@@ -49,7 +51,7 @@ impl SqlQueryRequest {
     }
 
     pub fn __str__(&self) -> String {
-        format!("{:?}", self)
+        format!("{self:?}")
     }
 }
 
@@ -76,11 +78,11 @@ pub struct SqlQueryResponse {
 
 #[pymethods]
 impl SqlQueryResponse {
-    pub fn row_num(&self) -> usize {
+    pub fn num_rows(&self) -> usize {
         self.rust_rows.len()
     }
 
-    pub fn get_row(&self, row_idx: usize) -> Option<Row> {
+    pub fn row_by_idx(&self, row_idx: usize) -> Option<Row> {
         if self.rust_rows.len() > row_idx {
             Some(Row {
                 rust_rows: self.rust_rows.clone(),
@@ -91,8 +93,50 @@ impl SqlQueryResponse {
         }
     }
 
+    pub fn iter_rows(&self) -> RowIter {
+        RowIter {
+            rust_rows: self.rust_rows.clone(),
+            next_row_idx: 0,
+        }
+    }
+
     pub fn __str__(&self) -> String {
-        format!("{:?}", self)
+        format!("{self:?}")
+    }
+}
+
+#[pyclass]
+#[derive(Clone)]
+pub struct RowIter {
+    rust_rows: Arc<Vec<RustRow>>,
+    next_row_idx: usize,
+}
+
+#[pymethods]
+impl RowIter {
+    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+
+    fn __next__(mut slf: PyRefMut<'_, Self>) -> Option<Row> {
+        if slf.rust_rows.len() > slf.next_row_idx {
+            let row_idx = slf.next_row_idx;
+            slf.next_row_idx += 1;
+            Some(Row {
+                rust_rows: slf.rust_rows.clone(),
+                row_idx,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn __str__(&self) -> String {
+        format!(
+            "total_rows:{}, next_row_idx:{}",
+            self.rust_rows.len(),
+            self.next_row_idx
+        )
     }
 }
 
@@ -166,7 +210,7 @@ impl Column {
 #[pymethods]
 impl Column {
     pub fn value(&self, py: Python<'_>) -> PyObject {
-        match &self.get_rust_col().value {
+        match self.get_rust_col().value() {
             RustValue::Null => py.None(),
             RustValue::Timestamp(v) => (*v).to_object(py),
             RustValue::Double(v) => (*v).to_object(py),
@@ -186,15 +230,47 @@ impl Column {
     }
 
     pub fn data_type(&self) -> DataType {
-        self.get_rust_col().value.data_type().into()
+        self.get_rust_col().value().data_type().into()
     }
 
     pub fn name(&self) -> &str {
-        &self.get_rust_col().name
+        self.get_rust_col().name()
     }
 
     pub fn __str__(&self) -> String {
-        format!("{:?}", self)
+        let rust_col = self.get_rust_col();
+        format!("{rust_col:?}")
+    }
+}
+
+#[pyclass]
+#[derive(Clone)]
+pub struct ColumnIter {
+    rust_rows: Arc<Vec<RustRow>>,
+    row_idx: usize,
+    next_col_idx: usize,
+}
+
+#[pymethods]
+impl ColumnIter {
+    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+
+    fn __next__(mut slf: PyRefMut<'_, Self>) -> Option<Column> {
+        // The row idx should be ensured in range.
+        let rust_row = &slf.rust_rows[slf.row_idx];
+        if slf.next_col_idx < rust_row.columns().len() {
+            let col_idx = slf.next_col_idx;
+            slf.next_col_idx += 1;
+            Some(Column {
+                rust_rows: slf.rust_rows.clone(),
+                row_idx: slf.row_idx,
+                col_idx,
+            })
+        } else {
+            None
+        }
     }
 }
 
@@ -208,40 +284,33 @@ pub struct Row {
 
 #[pymethods]
 impl Row {
-    pub fn column_by_idx(&self, col_idx: usize) -> PyResult<Column> {
+    pub fn column(&self, col_name: &str) -> Option<Column> {
         let row = &self.rust_rows[self.row_idx];
-
-        if col_idx >= row.columns().len() {
-            Err(PyTypeError::new_err(format!(
-                "invalid column idx:{}, total columns:{}",
-                col_idx,
-                row.columns().len()
-            )))
-        } else {
-            let col = Column {
-                row_idx: self.row_idx,
-                col_idx,
-                rust_rows: self.rust_rows.clone(),
-            };
-            Ok(col)
-        }
-    }
-
-    pub fn column_by_name(&self, col_name: &str) -> PyResult<Column> {
-        let row = &self.rust_rows[self.row_idx];
-        let col_idx = row.columns().iter().position(|c| c.name == col_name);
+        let col_idx = row.columns().iter().position(|c| c.name() == col_name);
         if let Some(col_idx) = col_idx {
             let col = Column {
                 row_idx: self.row_idx,
                 col_idx,
                 rust_rows: self.rust_rows.clone(),
             };
-            Ok(col)
+            Some(col)
         } else {
-            Err(PyTypeError::new_err(format!(
-                "Column:{} not found",
-                col_name,
-            )))
+            None
+        }
+    }
+
+    pub fn column_by_idx(&self, col_idx: usize) -> Option<Column> {
+        let row = &self.rust_rows[self.row_idx];
+
+        if col_idx >= row.columns().len() {
+            None
+        } else {
+            let col = Column {
+                row_idx: self.row_idx,
+                col_idx,
+                rust_rows: self.rust_rows.clone(),
+            };
+            Some(col)
         }
     }
 
@@ -249,8 +318,17 @@ impl Row {
         self.rust_rows[self.row_idx].columns().len()
     }
 
+    pub fn iter_columns(&self) -> ColumnIter {
+        ColumnIter {
+            rust_rows: self.rust_rows.clone(),
+            row_idx: self.row_idx,
+            next_col_idx: 0,
+        }
+    }
+
     pub fn __str__(&self) -> String {
-        format!("{:?}", self)
+        let rust_row = &self.rust_rows[self.row_idx];
+        format!("{rust_row:?}")
     }
 }
 
@@ -453,7 +531,7 @@ impl WriteRequest {
     }
 
     pub fn __str__(&self) -> PyResult<String> {
-        Ok(format!("{:?}", self))
+        Ok(format!("{:?}", self.rust_request))
     }
 }
 
@@ -486,7 +564,7 @@ impl WriteResponse {
     }
 
     pub fn __str__(&self) -> PyResult<String> {
-        Ok(format!("{:?}", self))
+        Ok(format!("{:?}", self.rust_response))
     }
 }
 

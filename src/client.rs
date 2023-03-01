@@ -2,7 +2,7 @@
 
 use std::{fmt::Debug, sync::Arc, time::Duration};
 
-use ceresdb_client_rs::{
+use ceresdb_client::{
     db_client::{Builder as RustBuilder, DbClient, Mode as RustMode},
     RpcConfig as RustRpcConfig, RpcContext as RustRpcContext,
 };
@@ -43,7 +43,7 @@ impl RpcContext {
     }
 
     pub fn __str__(&self) -> String {
-        format!("{:?}", self)
+        format!("{self:?}")
     }
 }
 
@@ -65,7 +65,7 @@ pub struct Client {
 }
 
 fn to_py_exception(err: impl Debug) -> PyErr {
-    PyException::new_err(format!("{:?}", err))
+    PyException::new_err(format!("{err:?}"))
 }
 
 #[pymethods]
