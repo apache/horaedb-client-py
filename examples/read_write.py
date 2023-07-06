@@ -44,7 +44,7 @@ def process_query_resp(resp):
         for col_idx in range(0, row.num_cols()):
             col = row.column_by_idx(col_idx)
             row_tokens.append(f"{col.name()}:{col.value()}#{col.data_type()}")
-        print(f"row#{col_idx}: {','.join(row_tokens)}")
+        print(f"row#{row_idx}: {','.join(row_tokens)}")
 
     print(f"Access row by iter in the resp:")
     for row in resp.iter_rows():
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     print("### write:")
     point_builder = PointBuilder('demo')
     point_builder.set_timestamp(
-        int(round(datetime.datetime.now().timestamp())))
+        int(round(datetime.datetime.now().timestamp())) * 1000)
     point_builder.set_tag("name", ValueBuilder().string("test_tag1"))
     point_builder.set_field("value", ValueBuilder().double(0.4242))
     point = point_builder.build()
