@@ -15,7 +15,7 @@ The python client for [CeresDB](https://github.com/CeresDB/horaedb).
 - [x] Query
 - [x] Write
 
-An [example](https://github.com/CeresDB/ceresdb-client-py/blob/main/examples/read_write.py) is provided to show how to access HoraeDB.
+An [example](https://github.com/CeresDB/horaedb-client-py/blob/main/examples/read_write.py) is provided to show how to access HoraeDB.
 
 ## Installation
 
