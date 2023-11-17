@@ -1,5 +1,5 @@
 [project]
-name = "ceresdb-client"
+name = "horaedb-client"
 version = "1.0.0"
 description = "The python client for ceresdb."
 readme = "README.md"
@@ -8,8 +8,39 @@ license = { file = "LICENSE" }
 authors = [
     { name = "CeresDB Authors", email = "ceresdbservice@gmail.com" }
 ]
-keywords = ["CeresDB"]
+keywords = ["HoraeDB"]
 
 [build-system]
 requires = ["maturin>=0.13,<0.14"]
 build-backend = "maturin"
+
+[tool.liccheck]
+authorized_licenses = [
+    "bsd",
+    "new bsd",
+    "bsd license",
+    "new bsd license",
+    "simplified bsd",
+    "apache",
+    "apache 2.0",
+    "apache software license",
+    "gnu lgpl",
+    "lgpl with exceptions or zpl",
+    "isc license",
+    "isc license (iscl)",
+    "mit",
+    "mit license",
+    "python software foundation license",
+    "zpl 2.1",
+]
+unauthorized_licenses = [
+    "gpl v3",
+]
+# strategy_ini_file = "./liccheck.ini"
+# level = "STANDARD"
+# requirement_txt_file = "./requirements.txt" # ignored if dependencies or optional_dependencies are defined
+# reporting_txt_file = "path/to/reporting.txt file" # by default is None
+# no_deps = false
+dependencies = true # to load [project.dependencies]
+optional_dependencies = ["test"] # to load extras from [project.optional-dependencies]
+

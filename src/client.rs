@@ -56,7 +56,7 @@ impl From<RpcContext> for RustRpcContext {
     }
 }
 
-/// The client for CeresDB.
+/// The client for HoraeDB.
 ///
 /// It is just a wrapper on the rust client, and it is thread-safe.
 #[pyclass]
