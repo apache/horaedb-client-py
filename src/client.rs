@@ -1,8 +1,8 @@
-// Copyright 2022 CeresDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 HoraeDB Project Authors. Licensed under Apache-2.0.
 
 use std::{fmt::Debug, sync::Arc, time::Duration};
 
-use ceresdb_client::{
+use horaedb_client::{
     db_client::{Builder as RustBuilder, DbClient, Mode as RustMode},
     RpcConfig as RustRpcConfig, RpcContext as RustRpcContext,
 };

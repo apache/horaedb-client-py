@@ -1,18 +1,18 @@
 [package]
-name = "horaedb-client-py"
+name    = "horaedb-client-py"
 version = "1.0.0"
-authors = ["CeresDB Authors <ceresdbservice@gmail.com>"]
+authors = ["HoraeDB Authors"]
 edition = "2021"
 
 [dependencies]
-ceresdb-client = "1.0"
-pyo3 = { version = "0.16", features = ["extension-module", "abi3-py37"] }
-pyo3-asyncio = { version = "0.16", features = ["attributes", "tokio-runtime"] }
-tokio = { version = "1", features = ["sync"] }
+horaedb-client = "1.0"
+pyo3           = { version = "0.16", features = ["extension-module", "abi3-py37"] }
+pyo3-asyncio   = { version = "0.16", features = ["attributes", "tokio-runtime"] }
+tokio          = { version = "1", features = ["sync"] }
 
 [lib]
 crate-type = ["cdylib"]
-name = "ceresdb_client"
+name       = "horaedb_client"
 
 [build-dependencies]
 cc = "1.0.73"

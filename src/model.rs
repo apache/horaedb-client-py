@@ -1,10 +1,10 @@
-// Copyright 2022 CeresDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 HoraeDB Project Authors. Licensed under Apache-2.0.
 
 //! Read/Write request and response, and useful tools for them.
 
 use std::sync::Arc;
 
-use ceresdb_client::model::{
+use horaedb_client::model::{
     sql_query::{
         row::{Column as RustColumn, Row as RustRow},
         Request as RustSqlQueryRequest, Response as RustSqlQueryResponse,
