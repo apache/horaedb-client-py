@@ -1,4 +1,4 @@
-# HoraeDB Python Client
+# Apache HoraeDB (Incubating) Python Client
 
 ![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)
 [![CI](https://github.com/apache/incubator-horaedb-client-py/actions/workflows/ci.yml/badge.svg)](https://github.com/apache/incubator-horaedb-client-py/actions/workflows/ci.yml)
@@ -6,9 +6,7 @@
 
 ## Introduction
 
-The python client for [HoraeDB](https://github.com/apache/incubator-horaedb).
-
-[HoraeDB](https://github.com/apache/incubator-horaedb) is a high-performance, distributed, schema-less, cloud native time-series database that can handle both time-series and analytics workloads.
+Python client for [Apache HoraeDB (Incubating)](https://github.com/apache/incubator-horaedb).
 
 ## Support features
 
