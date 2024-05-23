@@ -2,7 +2,7 @@
 
 import asyncio
 import datetime
-from horaedb_client import Builder, RpcContext, PointBuilder, ValueBuilder, WriteRequest, SqlQueryRequest, Mode, RpcConfig
+from horaedb_client import Builder, RpcContext, PointBuilder, ValueBuilder, WriteRequest, SqlQueryRequest, Mode, RpcConfig, Authorization
 
 
 def create_table(ctx):
@@ -75,6 +75,8 @@ if __name__ == "__main__":
     builder = Builder("127.0.0.1:8831", Mode.Direct)
     builder.set_rpc_config(rpc_config)
     builder.set_default_database("public")
+    # Required when server enable auth
+    builder.set_authorization(Authorization("test", "test"))
     client = builder.build()
 
     ctx = RpcContext()

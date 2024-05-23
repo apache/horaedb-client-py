@@ -20,6 +20,7 @@ pub fn register_py_module(m: &PyModule) -> PyResult<()> {
     m.add_class::<Builder>()?;
     m.add_class::<RpcConfig>()?;
     m.add_class::<Mode>()?;
+    m.add_class::<Authorization>()?;
 
     Ok(())
 }
@@ -217,6 +218,14 @@ pub enum Mode {
 pub struct Authorization {
     username: String,
     password: String,
+}
+
+#[pymethods]
+impl Authorization {
+    #[new]
+    pub fn new(username: String, password: String) -> Self {
+        Self { username, password }
+    }
 }
 
 impl From<Authorization> for horaedb_client::Authorization {
