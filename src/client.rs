@@ -20,6 +20,7 @@ pub fn register_py_module(m: &PyModule) -> PyResult<()> {
     m.add_class::<Builder>()?;
     m.add_class::<RpcConfig>()?;
     m.add_class::<Mode>()?;
+    m.add_class::<Authorization>()?;
 
     Ok(())
 }
@@ -212,6 +213,30 @@ pub enum Mode {
     Proxy,
 }
 
+#[pyclass]
+#[derive(Debug, Clone)]
+pub struct Authorization {
+    username: String,
+    password: String,
+}
+
+#[pymethods]
+impl Authorization {
+    #[new]
+    pub fn new(username: String, password: String) -> Self {
+        Self { username, password }
+    }
+}
+
+impl From<Authorization> for horaedb_client::Authorization {
+    fn from(auth: Authorization) -> Self {
+        Self {
+            username: auth.username,
+            password: auth.password,
+        }
+    }
+}
+
 #[pymethods]
 impl Builder {
     #[new]
@@ -235,6 +260,11 @@ impl Builder {
 
     pub fn set_default_database(&mut self, db: String) {
         let builder = self.rust_builder.take().unwrap().default_database(db);
+        self.rust_builder = Some(builder);
+    }
+
+    pub fn set_authorization(&mut self, auth: Authorization) {
+        let builder = self.rust_builder.take().unwrap().authorization(auth.into());
         self.rust_builder = Some(builder);
     }
 

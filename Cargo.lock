@@ -56,9 +56,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.69"
+version = "1.0.86"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "224afbd727c3d6e4b90103ece64b8d1b67fbb1973b1046c2281eed3f3803f800"
+checksum = "b3d1d046238990b9cf5bcde22a3fb3584ee5cf65fb2765f454ed428c7a0063da"
 
 [[package]]
 name = "arrow"
@@ -372,6 +372,12 @@ name = "base64"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
+
+[[package]]
+name = "base64"
+version = "0.22.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
 name = "bitflags"
@@ -775,12 +781,13 @@ dependencies = [
 
 [[package]]
 name = "horaedb-client"
-version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7bb850f1e1fc5d95b31278a842836652f0159e7f00d5e846e78c6076ae46b3b3"
+version = "2.0.0"
+source = "git+https://github.com/apache/incubator-horaedb-client-rs.git?rev=cc7a2fd07a8dbaad2d405f310f4239b889709afa#cc7a2fd07a8dbaad2d405f310f4239b889709afa"
 dependencies = [
+ "anyhow",
  "arrow",
  "async-trait",
+ "base64 0.22.1",
  "dashmap",
  "futures",
  "horaedbproto",
@@ -1910,7 +1917,7 @@ dependencies = [
  "async-stream",
  "async-trait",
  "axum",
- "base64",
+ "base64 0.13.1",
  "bytes",
  "futures-core",
  "futures-util",
