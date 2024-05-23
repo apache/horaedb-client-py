@@ -5,7 +5,6 @@ authors = ["HoraeDB Authors"]
 edition = "2021"
 
 [dependencies]
-horaedb-client = "1.0"
 horaedb-client = { git = "https://github.com/apache/incubator-horaedb-client-rs.git", rev = "cc7a2fd07a8dbaad2d405f310f4239b889709afa" }
 pyo3           = { version = "0.16", features = ["extension-module", "abi3-py37"] }
 pyo3-asyncio   = { version = "0.16", features = ["attributes", "tokio-runtime"] }
