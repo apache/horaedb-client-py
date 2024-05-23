@@ -212,6 +212,22 @@ pub enum Mode {
     Proxy,
 }
 
+#[pyclass]
+#[derive(Debug, Clone)]
+pub struct Authorization {
+    username: String,
+    password: String,
+}
+
+impl From<Authorization> for horaedb_client::Authorization {
+    fn from(auth: Authorization) -> Self {
+        Self {
+            username: auth.username,
+            password: auth.password,
+        }
+    }
+}
+
 #[pymethods]
 impl Builder {
     #[new]
@@ -235,6 +251,11 @@ impl Builder {
 
     pub fn set_default_database(&mut self, db: String) {
         let builder = self.rust_builder.take().unwrap().default_database(db);
+        self.rust_builder = Some(builder);
+    }
+
+    pub fn set_authorization(&mut self, auth: Authorization) {
+        let builder = self.rust_builder.take().unwrap().authorization(auth.into());
         self.rust_builder = Some(builder);
     }
 
