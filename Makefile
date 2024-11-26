@@ -23,7 +23,7 @@ install-deps:
 build:
 	maturin build --release
 
-lint: check-header
+fmt:
 	cargo fmt -- --check
 
 clippy:
