@@ -132,10 +132,8 @@ jobs:
     strategy:
       matrix:
         platform:
-          - runner: macos-12
-            target: x86_64
-          - runner: macos-14
-            target: aarch64
+          - runner: macos-latest
+            target: universal2-apple-darwin
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
