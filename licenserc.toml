@@ -15,21 +15,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
-[package]
-name    = "horaedb-client-py"
-version = "2.0.0"
-authors = ["HoraeDB Authors"]
-edition = "2021"
+headerPath = "Apache-2.0-ASF.txt"
 
-[dependencies]
-horaedb-client = "2"
-pyo3           = { version = "0.16", features = ["extension-module", "abi3-py37"] }
-pyo3-asyncio   = { version = "0.16", features = ["attributes", "tokio-runtime"] }
-tokio          = { version = "1", features = ["sync"] }
-
-[lib]
-crate-type = ["cdylib"]
-name       = "horaedb_client"
-
-[build-dependencies]
-cc = "1.0.73"
+excludes = [
+  "NOTICE",
+  "DISCLAIMER",
+  # Python virtual env
+  ".env",
+  "env",
+]
