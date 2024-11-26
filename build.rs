@@ -16,7 +16,7 @@
 // under the License.
 
 fn main() {
-    let target = env::var("TARGET").unwrap();
+    let target = std::env::var("TARGET").unwrap();
     if target.contains("apple") {
         // On (older) OSX we need to link against the clang runtime,
         // which is hidden in some non-default path.
