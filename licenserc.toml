@@ -15,21 +15,4 @@
 # specific language governing permissions and limitations
 # under the License.
 
-[package]
-name    = "horaedb-client-py"
-version = "1.0.0"
-authors = ["HoraeDB Authors"]
-edition = "2021"
-
-[dependencies]
-horaedb-client = { git = "https://github.com/apache/incubator-horaedb-client-rs.git", rev = "cc7a2fd07a8dbaad2d405f310f4239b889709afa" }
-pyo3           = { version = "0.16", features = ["extension-module", "abi3-py37"] }
-pyo3-asyncio   = { version = "0.16", features = ["attributes", "tokio-runtime"] }
-tokio          = { version = "1", features = ["sync"] }
-
-[lib]
-crate-type = ["cdylib"]
-name       = "horaedb_client"
-
-[build-dependencies]
-cc = "1.0.73"
+headerPath = "Apache-2.0-ASF.txt"
