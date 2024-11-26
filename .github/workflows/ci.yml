@@ -36,7 +36,7 @@ env:
 
 jobs:
   lint:
-    name: Libraries Style Check
+    name: Lint
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -52,9 +52,10 @@ jobs:
           path: |
             ~/.cargo
             ./target
-          key: sqlness-${{ runner.os }}-${{ hashFiles('Cargo.toml') }}
+          key: horaedb-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml') }}-${{ hashFiles('Cargo.toml') }}
           restore-keys: |
-            sqlness-${{ runner.os }}-
+            horaedb-${{ runner.os }}-
+            horaedb-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml') }}-
       - name: Check License Header
         uses: korandoru/hawkeye@v4
       - name: Lint

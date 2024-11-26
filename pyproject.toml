@@ -15,46 +15,31 @@
 # specific language governing permissions and limitations
 # under the License.
 
-[project]
-name            = "horaedb-client"
-version         = "1.0.0"
-description     = "The python client for horaedb."
-readme          = "README.md"
-requires-python = ">=3.7"
-license         = { file = "LICENSE" }
-authors         = [{ name = "HoraeDB Authors" }]
-keywords        = ["HoraeDB"]
-
 [build-system]
-requires      = ["maturin>=0.13,<0.14"]
+requires = ["maturin>=1.7,<2.0"]
 build-backend = "maturin"
 
-[tool.liccheck]
-authorized_licenses = [
-    "bsd",
-    "new bsd",
-    "bsd license",
-    "new bsd license",
-    "simplified bsd",
-    "apache",
-    "apache 2.0",
-    "apache software license",
-    "gnu lgpl",
-    "lgpl with exceptions or zpl",
-    "isc license",
-    "isc license (iscl)",
-    "mit",
-    "mit license",
-    "python software foundation license",
-    "zpl 2.1",
+[project]
+name = "horaedb-client"
+description = "Python client for Apache HoraeDB(incubating), a high-performance, distributed, cloud native time-series database."
+readme = "README.md"
+license = "Apache-2.0"
+keywords = ["database", "time-series", "iot", "devops"]
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development",
+    "Intended Audience :: Developers",
 ]
-unauthorized_licenses = ["gpl v3"]
-# strategy_ini_file = "./liccheck.ini"
-# level = "STANDARD"
-# requirement_txt_file = "./requirements.txt" # ignored if dependencies or optional_dependencies are defined
-# reporting_txt_file = "path/to/reporting.txt file" # by default is None
-# no_deps = false
-dependencies = true # to load [project.dependencies]
-optional_dependencies = [
-    "test",
-] # to load extras from [project.optional-dependencies]
+dynamic = ["version"]
+
+[project.urls]
+Documentation = "https://github.com/apache/horaedb-client-py"
+Homepage = "https://github.com/apache/horaedb-client-py"
+Repository = "https://github.com/apache/horaedb-client-py"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]

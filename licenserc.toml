@@ -16,3 +16,11 @@
 # under the License.
 
 headerPath = "Apache-2.0-ASF.txt"
+
+excludes = [
+  "NOTICE",
+  "DISCLAIMER",
+  # Python virtual env
+  ".env",
+  "env",
+]

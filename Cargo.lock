@@ -782,7 +782,8 @@ dependencies = [
 [[package]]
 name = "horaedb-client"
 version = "2.0.0"
-source = "git+https://github.com/apache/incubator-horaedb-client-rs.git?rev=cc7a2fd07a8dbaad2d405f310f4239b889709afa#cc7a2fd07a8dbaad2d405f310f4239b889709afa"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "927ef36d6ccbca0db1d90833b993bde4af7748717d483cb6dce99820ba249fec"
 dependencies = [
  "anyhow",
  "arrow",
@@ -800,7 +801,7 @@ dependencies = [
 
 [[package]]
 name = "horaedb-client-py"
-version = "1.0.0"
+version = "2.0.0"
 dependencies = [
  "cc",
  "horaedb-client",
