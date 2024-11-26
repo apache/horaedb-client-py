@@ -363,7 +363,7 @@ pub struct ValueBuilder;
 impl ValueBuilder {
     #[new]
     pub fn new() -> Self {
-        Self::default()
+        Self
     }
 
     pub fn null(&self) -> Value {
